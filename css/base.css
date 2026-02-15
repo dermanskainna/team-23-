@@ -1,0 +1,23 @@
+:root {
+    --primary-dark: #1F5E4E;
+    --primary: #2F7A63;
+    --primary-light: #78B27C;
+    --background-light: #F3F4EF;
+    --card-bg: #FFFFFF;
+    --accent: #F4A261;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+    margin: 0;
+    background: var(--background-light);
+}
+
+.container {
+    width: 1200px;
+    margin: auto;
+}
