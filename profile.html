@@ -14,21 +14,38 @@
         <nav>
             <a href="index.html">Головна</a>
             <a href="requests.html">Запити</a>
-            <a href="login.html">Вийти</a>
         </nav>
     </div>
 </header>
 
 <section class="section">
-    <div class="container">
-        <div class="card">
-            <h2>Мій профіль</h2>
-            <p><strong>Ім’я:</strong> Ім'я користувача</p>
-            <p><strong>Email:</strong> example@email.com</p>
-            <button class="btn btn-primary">Редагувати профіль</button>
-        </div>
+<div class="container">
+
+    <!-- ПРОФІЛЬ -->
+    <div class="card profile-card">
+        <h2>Мій профіль</h2>
+        <p><strong>Ім’я:</strong> Ім'я користувача</p>
+        <p><strong>Email:</strong> example@email.com</p>
+        <p><strong>Статус:</strong>
+            <span id="userStatus" class="status-badge military">
+                Військовий
+            </span>
+        </p>
     </div>
+
+    <!-- ВКЛАДКИ -->
+    <div class="tabs" id="tabsContainer"></div>
+
+    <!-- КОНТЕНТ -->
+    <div id="published" class="tab-content"></div>
+    <div id="accepted" class="tab-content"></div>
+
+</div>
 </section>
+
+<script src="profile.js"></script>
 
 </body>
 </html>
+
+
