@@ -23,6 +23,12 @@ export default function Header() {
     }
   }, [isLiteMode]);
 
+  const handleEmergencyExit = () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.replace('/login');
+  };
+
   return (
     <header className="navbar">
       <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -32,6 +38,8 @@ export default function Header() {
           <Link to="/">Головна</Link>
 
           {!userRole && <Link to="/login">Увійти</Link>}
+
+          {userRole && <Link to="/tracking">Трекінг</Link>}
 
           {userRole === 'military' && (
             <>
@@ -53,11 +61,27 @@ export default function Header() {
             style={{
               background: isLiteMode ? '#F4A261' : 'transparent',
               border: '1px solid white', color: 'white', padding: '6px 12px',
-              borderRadius: '6px', cursor: 'pointer', marginLeft: '20px', fontWeight: 'bold'
+              borderRadius: '6px', cursor: 'pointer', marginLeft: '10px', fontWeight: 'bold'
             }}
+            title="Оптимізація для поганого інтернету"
           >
-            {isLiteMode ? '📶 Зв\'язок: Поганий' : '📶 Зв\'язок: Ок'}
+            {isLiteMode ? 'Зв\'язок: Поганий' : 'Зв\'язок: Ок'}
           </button>
+
+          {userRole && (
+            <button
+              onClick={handleEmergencyExit}
+              style={{
+                background: '#c0392b', border: 'none', color: 'white', padding: '6px 12px',
+                borderRadius: '6px', cursor: 'pointer', marginLeft: '5px', fontWeight: 'bold',
+                display: 'flex', alignItems: 'center', gap: '5px'
+              }}
+              title="Екстрене знищення сесії та вихід"
+            >
+              🚨
+            </button>
+          )}
+
         </nav>
       </div>
     </header>

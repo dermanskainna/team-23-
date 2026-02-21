@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 
 export default function VolunteerDashboard() {
   const [requests, setRequests] = useState([
-    { id: 1, title: 'Мавік 3T', militaryName: 'Олександр (3 ОШБр)', location: 'Покровськ', status: 'new', date: '21.02.2026' },
-    { id: 2, title: 'Турнікети CAT (20 шт)', militaryName: 'Іван (110 ОМБр)', location: 'Купʼянськ', status: 'in_progress', date: '20.02.2026' },
-    { id: 3, title: 'Тепловізор Pulsar', militaryName: 'Михайло (Азов)', location: 'Краматорськ', status: 'completed', date: '18.02.2026' },
+    { id: '1004', title: 'Мавік 3T', militaryName: 'Олександр (3 ОШБр)', location: 'Покровськ', status: 'new', date: '21.02.2026' },
+    { id: '1005', title: 'Турнікети CAT (20 шт)', militaryName: 'Іван (110 ОМБр)', location: 'Купʼянськ', status: 'in_progress', date: '20.02.2026' },
+    { id: '1006', title: 'Тепловізор Pulsar', militaryName: 'Михайло (Азов)', location: 'Краматорськ', status: 'completed', date: '18.02.2026' },
   ]);
 
   const [filter, setFilter] = useState('all');
@@ -81,6 +81,7 @@ export default function VolunteerDashboard() {
                 <div key={req.id} style={{ display: 'flex', alignItems: 'center', padding: '15px 0', borderBottom: '1px solid #eee' }}>
                   <div style={{ flex: '1', fontSize: '14px', color: '#555' }}>{req.date}</div>
                   <div style={{ flex: '2', fontWeight: '500' }}>
+                    <span style={{ color: '#888', marginRight: '8px', fontSize: '13px' }}>#{req.id}</span>
                     {req.title}
                     {req.status === 'rejected' && (
                       <div style={{ fontSize: '13px', color: '#e74c3c', marginTop: '4px' }}>

@@ -11,6 +11,7 @@ import CreateRequest from './pages/CreateRequest';
 import AcceptRequest from './pages/AcceptRequest';
 import Warehouse from './pages/Warehouse';
 import VolunteerDashboard from './pages/VolunteerDashboard';
+import Tracking from './pages/Tracking';
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/accept-request" element={<AcceptRequest />} />
         <Route path="/warehouse" element={<Warehouse />} />
         <Route path="/dashboard" element={<VolunteerDashboard />} />
+        <Route path="/tracking" element={<Tracking />} />
       </Routes>
     </Router>
   );
