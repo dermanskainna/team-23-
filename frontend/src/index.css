@@ -182,3 +182,26 @@ body {
 .section {
   padding: 60px 0;
 }
+
+body.lite-mode {
+  background: #ffffff;
+}
+
+body.lite-mode .hero {
+  background: var(--primary-dark) !important;
+  padding: 40px 0;
+}
+
+body.lite-mode img {
+  display: none !important;
+}
+
+body.lite-mode * {
+  box-shadow: none !important;
+  transition: none !important;
+  font-family: Arial, sans-serif !important;
+}
+
+body.lite-mode .card {
+  border: 1px solid #cccccc;
+}

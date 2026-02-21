@@ -9,6 +9,8 @@ import Profile from './pages/Profile';
 import Requests from './pages/Requests';
 import CreateRequest from './pages/CreateRequest';
 import AcceptRequest from './pages/AcceptRequest';
+import Warehouse from './pages/Warehouse';
+import VolunteerDashboard from './pages/VolunteerDashboard';
 
 export default function App() {
   return (
@@ -22,6 +24,8 @@ export default function App() {
         <Route path="/requests" element={<Requests />} />
         <Route path="/create-request" element={<CreateRequest />} />
         <Route path="/accept-request" element={<AcceptRequest />} />
+        <Route path="/warehouse" element={<Warehouse />} />
+        <Route path="/dashboard" element={<VolunteerDashboard />} />
       </Routes>
     </Router>
   );
