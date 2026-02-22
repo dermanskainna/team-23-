@@ -112,18 +112,28 @@ export default function VolunteerDashboard() {
           {filteredRequests.length === 0 ? (
             <p>Запитів у цій категорії не знайдено.</p>
           ) : (
-            <div style={{ width: '100%' }}>
-              <div style={{ display: 'flex', fontWeight: 'bold', borderBottom: '2px solid #ddd', paddingBottom: '10px', marginBottom: '10px' }}>
-                <div style={{ flex: '1' }}>Дата</div>
-                <div style={{ flex: '2' }}>Запит</div>
-                <div style={{ flex: '2' }}>Підрозділ / Локація</div>
-                <div style={{ flex: '1' }}>Статус</div>
-                <div style={{ flex: '1', textAlign: 'center' }}>Терміновість</div>
-                <div style={{ flex: '3', textAlign: 'right' }}>Дії</div>
-              </div>
+            <div className="table-scroll">
+              <div style={{ width: '100%', minWidth: '900px' }}>
+
+                <div style={{ display: 'flex', fontWeight: 'bold', borderBottom: '2px solid #ddd', paddingBottom: '10px', marginBottom: '10px' }}>
+                  <div style={{ flex: '1' }}>Дата</div>
+                  <div style={{ flex: '2' }}>Запит</div>
+                  <div style={{ flex: '2' }}>Підрозділ / Локація</div>
+                  <div style={{ flex: '1' }}>Статус</div>
+                  <div style={{ flex: '1', textAlign: 'center' }}>Терміновість</div>
+                  <div style={{ flex: '3', textAlign: 'right' }}>Дії</div>
+                </div>
 
               {filteredRequests.map((req) => (
-                <div key={req.id} style={{ display: 'flex', alignItems: 'center', padding: '15px 0', borderBottom: '1px solid #eee' }}>
+                <div
+                key={req.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '15px 0',
+                  borderBottom: '1px solid #eee'
+                  }}
+                >
                   <div style={{ flex: '1', fontSize: '14px', color: '#555' }}>{req.date}</div>
                   <div style={{ flex: '2', fontWeight: '500' }}>
                     <span style={{ color: '#888', marginRight: '8px', fontSize: '13px' }}>#{req.id}</span>
@@ -165,12 +175,15 @@ export default function VolunteerDashboard() {
                     {(req.status === 'new' || req.status === 'in_progress') && (
                       <button className="btn" style={{ background: '#e74c3c', color: 'white', padding: '6px 12px', fontSize: '13px' }} onClick={() => handleOpenRejectModal(req.id)}>Відхилити</button>
                     )}
+
                   </div>
                 </div>
               ))}
+
             </div>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
 
         {isRejectModalOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
