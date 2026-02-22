@@ -1,52 +1,106 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState('military');
-
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const [formData, setFormData] = useState({ username: '', password: '' });
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setIsLoading(true);
 
-    localStorage.setItem("user", JSON.stringify({
-        email: email || "test@user.com",
-        role: role
-    }));
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/users/login/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
 
-    navigate("/profile");
+      const data = await response.json();
+
+      if (response.ok) {
+        const userDataToSave = {
+          ...data.user,
+          token: data.token
+        };
+        localStorage.setItem("user", JSON.stringify(userDataToSave));
+
+        alert("Успішний вхід! Токен отримано: " + data.token.substring(0, 10) + "...");
+
+        if (data.user.role === 'military') {
+          navigate('/create-request');
+        } else if (data.user.role === 'volunteer') {
+          navigate('/dashboard');
+        } else {
+          navigate('/');
+        }
+      } else {
+        setError(data.error || 'Неправильний логін або пароль');
+      }
+    } catch (err) {
+      console.error("Помилка мережі:", err);
+      setError('Не вдалося з\'єднатися з сервером. Перевірте, чи запущений Django.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <section className="section">
-      <div className="container">
-        <div className="card" style={{ maxWidth: '400px', margin: 'auto' }}>
-          <h2>Вхід</h2>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <input
-              className="input" style={{ marginBottom: 0 }}
-              type="email" placeholder="Email"
-              value={email} onChange={(e) => setEmail(e.target.value)}
-            />
-            <input
-              className="input" style={{ marginBottom: 0 }}
-              type="password" placeholder="Пароль"
-              value={password} onChange={(e) => setPassword(e.target.value)}
-            />
+    <section className="section" style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9f8f6' }}>
+      <div className="card" style={{ maxWidth: '400px', width: '100%', padding: '40px' }}>
+        <h2 style={{ textAlign: 'center', marginBottom: '30px', color: '#2C3E50' }}>Вхід у систему</h2>
 
-            <select
-              className="input" style={{ marginBottom: 0 }}
-              value={role} onChange={(e) => setRole(e.target.value)}
-            >
-              <option value="military">Військовий</option>
-              <option value="volunteer">Волонтер</option>
-            </select>
+        {error && (
+          <div style={{ background: '#fee2e2', color: '#ef4444', padding: '10px', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', textAlign: 'center' }}>
+            {error}
+          </div>
+        )}
 
-            <button className="btn btn-primary" type="submit">Увійти</button>
-          </form>
-        </div>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555', fontSize: '14px' }}>Логін (Username)</label>
+            <input
+              type="text"
+              name="username"
+              className="input"
+              placeholder="Введіть ваш логін"
+              value={formData.username}
+              onChange={handleChange}
+              required
+              style={{ marginBottom: 0 }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555', fontSize: '14px' }}>Пароль</label>
+            <input
+              type="password"
+              name="password"
+              className="input"
+              placeholder="••••••••"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              style={{ marginBottom: 0 }}
+            />
+          </div>
+
+          <button type="submit" className="btn btn-primary" style={{ marginTop: '10px', padding: '12px' }} disabled={isLoading}>
+            {isLoading ? 'Завантаження...' : 'Увійти'}
+          </button>
+          <p><Link to="/register">Зареєструватися</Link></p>
+        </form>
+
       </div>
     </section>
   );
