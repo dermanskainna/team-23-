@@ -205,3 +205,28 @@ body.lite-mode * {
 body.lite-mode .card {
   border: 1px solid #cccccc;
 }
+
+.urgency-badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  display: inline-block
+}
+
+.urgency-badge.low {
+  background: #2ecc71;
+}
+
+.urgency-badge.medium {
+  background: #f39c12;
+}
+
+.urgency-badge.high {
+  background: #e74c3c;
+}
+
+.urgency-badge.critical {
+  background: #8e1b10;
+}

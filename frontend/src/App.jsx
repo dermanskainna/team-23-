@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
+
 import Header from './components/Header';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -28,6 +29,7 @@ export default function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/create-request" element={<CreateRequest />} />
+            <Route path="/accept-request" element={<AcceptRequest />} />
             <Route path="/warehouse" element={<Warehouse />} />
             <Route path="/dashboard" element={<VolunteerDashboard />} />
             <Route path="/tracking" element={<Tracking />} />

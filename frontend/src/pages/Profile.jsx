@@ -26,6 +26,10 @@ export default function Profile() {
         organization: savedUser.organization || ''
       };
       setUser(fullUserData);
+      const savedPublished = JSON.parse(localStorage.getItem("publishedRequests"));
+      if (savedPublished) {
+        setPublishedRequests(savedPublished);
+      }
       setFormData(fullUserData);
 
       if (savedUser.role === 'volunteer') setActiveTab('accepted');
@@ -33,12 +37,12 @@ export default function Profile() {
   }, []);
 
   const [publishedRequests, setPublishedRequests] = useState([
-    { id: '1001', title: "Медикаменти", description: "Бинти (50шт), знеболювальні (10 пачок)", location: "Бахмутський напрямок", status: "active" },
-    { id: '1002', title: "Дрон Mavic 3", description: "Стандартна комплектація + 2 додаткові батареї", location: "Куп'янськ", status: "completed", feedback: null }
+    { id: '1001', title: "Медикаменти", description: "Бинти (50шт), знеболювальні (10 пачок)", location: "Бахмутський напрямок", status: "active", urgency: "high" },
+    { id: '1002', title: "Дрон Mavic 3", description: "Стандартна комплектація + 2 додаткові батареї", location: "Куп'янськ", status: "completed", feedback: null, urgency: "medium" }
   ]);
 
   const acceptedRequests = [
-    { id: '1003', title: "Тепловізор", description: "Pulsar Thermion", location: "Авдіївка", status: "in_progress" }
+    { id: '1003', title: "Тепловізор", description: "Pulsar Thermion", location: "Авдіївка", status: "in_progress", urgency: "critical" }
   ];
 
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
@@ -50,6 +54,14 @@ export default function Profile() {
     if (status === "active") return "Активний";
     if (status === "in_progress") return "В процесі";
     if (status === "completed") return "Виконано";
+  };
+
+  const getUrgencyLabel = (urgency) => {
+    if (urgency === "low") return "Низька";
+    if (urgency === "medium") return "Середня";
+    if (urgency === "high") return "Висока";
+    if (urgency === "critical") return "Критична";
+    return "—";
   };
 
   const handleRepeatOrder = (req) => {
@@ -145,6 +157,11 @@ export default function Profile() {
                   </h3>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <span className={`request-status ${req.status}`}>{getStatusLabel(req.status)}</span>
+
+                    <span className={`urgency-badge ${req.urgency}`}>
+                      {getUrgencyLabel(req.urgency)}
+                    </span>
+
                     {req.feedback && (
                       <span style={{ fontSize: '13px', color: '#f39c12', fontWeight: 'bold' }}>
                         {'★'.repeat(req.feedback.rating)}{'☆'.repeat(5 - req.feedback.rating)} Оцінено
@@ -153,7 +170,8 @@ export default function Profile() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+
                   {req.status === 'completed' && !req.feedback && (
                     <button className="btn" style={{ padding: '8px 15px', display: 'flex', alignItems: 'center', gap: '5px', background: '#f39c12', color: 'white' }} onClick={() => openFeedbackModal(req)}>
                       Оцінити
@@ -176,8 +194,17 @@ export default function Profile() {
                   <span style={{ color: '#888', marginRight: '8px', fontSize: '16px' }}>#{req.id}</span>
                   {req.title}
                 </h3>
-                <span className={`request-status ${req.status}`}>{getStatusLabel(req.status)}</span>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '5px' }}>
+                  <span className={`request-status ${req.status}`}>
+                    {getStatusLabel(req.status)}
+                  </span>
+
+                  <span className={`urgency-badge ${req.urgency}`}>
+                    {getUrgencyLabel(req.urgency)}
+                  </span>
               </div>
+
+             </div>
             ))}
           </div>
         )}
