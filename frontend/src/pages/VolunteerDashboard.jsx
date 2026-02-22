@@ -3,15 +3,15 @@ import React, { useState } from 'react';
 export default function VolunteerDashboard() {
   const [requests, setRequests] = useState([
     {
-      id: '1004', title: 'Мавік 3T', militaryName: 'Олександр (3 ОШБр)', location: 'Покровськ', status: 'new', date: '21.02.2026',
+      id: '1004', title: 'Мавік 3T', militaryName: 'Олександр (3 ОШБр)', location: 'Покровськ', status: 'new', date: '21.02.2026', urgency: 'critical',
       comments: [{ id: 1, author: 'Олександр (3 ОШБр)', text: 'Хлопці, дуже чекаємо на пташку, стара була втрачена вчора.', time: '09:15' }]
     },
     {
-      id: '1005', title: 'Турнікети CAT (20 шт)', militaryName: 'Іван (110 ОМБр)', location: 'Купʼянськ', status: 'in_progress', date: '20.02.2026',
+      id: '1005', title: 'Турнікети CAT (20 шт)', militaryName: 'Іван (110 ОМБр)', location: 'Купʼянськ', status: 'in_progress', date: '20.02.2026', urgency: 'high',
       comments: []
     },
     {
-      id: '1006', title: 'Тепловізор Pulsar', militaryName: 'Михайло (Азов)', location: 'Краматорськ', status: 'completed', date: '18.02.2026',
+      id: '1006', title: 'Тепловізор Pulsar', militaryName: 'Михайло (Азов)', location: 'Краматорськ', status: 'completed', date: '18.02.2026', urgency: 'medium',
       comments: []
     },
   ]);
@@ -86,6 +86,13 @@ export default function VolunteerDashboard() {
   };
 
   const activeReq = requests.find(r => r.id === activeChatReqId);
+  const getUrgencyLabel = (urgency) => {
+    if (urgency === "low") return "Низька";
+    if (urgency === "medium") return "Середня";
+    if (urgency === "high") return "Висока";
+    if (urgency === "critical") return "Критична";
+    return "—";
+  };
 
   return (
     <section className="section">
@@ -105,17 +112,28 @@ export default function VolunteerDashboard() {
           {filteredRequests.length === 0 ? (
             <p>Запитів у цій категорії не знайдено.</p>
           ) : (
-            <div style={{ width: '100%' }}>
-              <div style={{ display: 'flex', fontWeight: 'bold', borderBottom: '2px solid #ddd', paddingBottom: '10px', marginBottom: '10px' }}>
-                <div style={{ flex: '1' }}>Дата</div>
-                <div style={{ flex: '2' }}>Запит</div>
-                <div style={{ flex: '2' }}>Підрозділ / Локація</div>
-                <div style={{ flex: '1' }}>Статус</div>
-                <div style={{ flex: '3', textAlign: 'right' }}>Дії</div>
-              </div>
+            <div className="table-scroll">
+              <div style={{ width: '100%', minWidth: '900px' }}>
+
+                <div style={{ display: 'flex', fontWeight: 'bold', borderBottom: '2px solid #ddd', paddingBottom: '10px', marginBottom: '10px' }}>
+                  <div style={{ flex: '1' }}>Дата</div>
+                  <div style={{ flex: '2' }}>Запит</div>
+                  <div style={{ flex: '2' }}>Підрозділ / Локація</div>
+                  <div style={{ flex: '1' }}>Статус</div>
+                  <div style={{ flex: '1', textAlign: 'center' }}>Терміновість</div>
+                  <div style={{ flex: '3', textAlign: 'right' }}>Дії</div>
+                </div>
 
               {filteredRequests.map((req) => (
-                <div key={req.id} style={{ display: 'flex', alignItems: 'center', padding: '15px 0', borderBottom: '1px solid #eee' }}>
+                <div
+                key={req.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '15px 0',
+                  borderBottom: '1px solid #eee'
+                  }}
+                >
                   <div style={{ flex: '1', fontSize: '14px', color: '#555' }}>{req.date}</div>
                   <div style={{ flex: '2', fontWeight: '500' }}>
                     <span style={{ color: '#888', marginRight: '8px', fontSize: '13px' }}>#{req.id}</span>
@@ -131,6 +149,12 @@ export default function VolunteerDashboard() {
                     <span style={{fontSize: '12px', color: '#888'}}>📍 {req.location}</span>
                   </div>
                   <div style={{ flex: '1' }}>{getStatusBadge(req.status)}</div>
+
+                  <div style={{ flex: '1', textAlign: 'center' }}>
+                    <span className={`urgency-badge ${req.urgency || 'medium'}`}>
+                      {getUrgencyLabel(req.urgency || 'medium')}
+                    </span>
+                  </div>
 
                   <div style={{ flex: '3', textAlign: 'right', display: 'flex', gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
 
@@ -151,12 +175,15 @@ export default function VolunteerDashboard() {
                     {(req.status === 'new' || req.status === 'in_progress') && (
                       <button className="btn" style={{ background: '#e74c3c', color: 'white', padding: '6px 12px', fontSize: '13px' }} onClick={() => handleOpenRejectModal(req.id)}>Відхилити</button>
                     )}
+
                   </div>
                 </div>
               ))}
+
             </div>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
 
         {isRejectModalOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>

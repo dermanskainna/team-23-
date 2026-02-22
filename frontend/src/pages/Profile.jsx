@@ -26,6 +26,10 @@ export default function Profile() {
         organization: savedUser.organization || ''
       };
       setUser(fullUserData);
+      const savedPublished = JSON.parse(localStorage.getItem("publishedRequests"));
+      if (savedPublished) {
+        setPublishedRequests(savedPublished);
+      }
       setFormData(fullUserData);
 
       if (savedUser.role === 'volunteer') setActiveTab('accepted');
@@ -33,13 +37,15 @@ export default function Profile() {
   }, []);
 
   const [publishedRequests, setPublishedRequests] = useState([
-    { id: '1001', title: "Медикаменти", description: "Бинти (50шт), знеболювальні (10 пачок)", location: "Бахмутський напрямок", status: "active" },
-    { id: '1002', title: "Дрон Mavic 3", description: "Стандартна комплектація + 2 додаткові батареї", location: "Куп'янськ", status: "completed", feedback: null }
+    { id: '1001', title: "Медикаменти", description: "Бинти (50шт), знеболювальні (10 пачок)", location: "Бахмутський напрямок", status: "active", urgency: "high" },
+    { id: '1002', title: "Дрон Mavic 3", description: "Стандартна комплектація + 2 додаткові батареї", location: "Куп'янськ", status: "completed", feedback: null, urgency: "medium" }
   ]);
 
   const acceptedRequests = [
-    { id: '1003', title: "Тепловізор", description: "Pulsar Thermion", location: "Авдіївка", status: "in_progress" }
+    { id: '1003', title: "Тепловізор", description: "Pulsar Thermion", location: "Авдіївка", status: "completed", urgency: "critical" }
   ];
+
+  const completedCount = (user.role === 'volunteer' ? acceptedRequests : []).filter(r => r.status === 'completed').length;
 
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [feedbackRequest, setFeedbackRequest] = useState(null);
@@ -51,6 +57,23 @@ export default function Profile() {
     if (status === "in_progress") return "В процесі";
     if (status === "completed") return "Виконано";
   };
+
+  const getUrgencyLabel = (urgency) => {
+    if (urgency === "low") return "Низька";
+    if (urgency === "medium") return "Середня";
+    if (urgency === "high") return "Висока";
+    if (urgency === "critical") return "Критична";
+    return "—";
+  };
+
+  const getTrustLevel = (count) => {
+    if (count >= 20) return { label: "Партнер платформи", key: "partner" };
+    if (count >= 10) return { label: "Перевірений волонтер", key: "verified" };
+    if (count >= 5) return { label: "Надійний волонтер", key: "reliable" };
+    if (count >= 1) return { label: "Активний волонтер", key: "active" };
+    return { label: "Новий волонтер", key: "new" };
+  };
+  const trustLevel = getTrustLevel(completedCount);
 
   const handleRepeatOrder = (req) => {
     navigate('/create-request', { state: { repeatedData: req } });
@@ -111,6 +134,18 @@ export default function Profile() {
                 {user.role === 'military' ? 'Військовий' : 'Волонтер'}
               </span>
             </p>
+
+            {user.role === 'volunteer' && (
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '12px', flexWrap: 'wrap' }}>
+                <span className={`trust-badge ${trustLevel.key}`}>
+                  {trustLevel.label}
+                </span>
+
+                <span className="trust-count">
+                  📦 Виконано запитів: <strong>{completedCount}</strong>
+                </span>
+              </div>
+            )}
           </div>
           <button className="btn" style={{ background: '#e74c3c', color: 'white', padding: '8px 16px', fontWeight: 'bold' }} onClick={handleLogout}>
             Вийти
@@ -145,6 +180,11 @@ export default function Profile() {
                   </h3>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <span className={`request-status ${req.status}`}>{getStatusLabel(req.status)}</span>
+
+                    <span className={`urgency-badge ${req.urgency}`}>
+                      {getUrgencyLabel(req.urgency)}
+                    </span>
+
                     {req.feedback && (
                       <span style={{ fontSize: '13px', color: '#f39c12', fontWeight: 'bold' }}>
                         {'★'.repeat(req.feedback.rating)}{'☆'.repeat(5 - req.feedback.rating)} Оцінено
@@ -153,7 +193,8 @@ export default function Profile() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+
                   {req.status === 'completed' && !req.feedback && (
                     <button className="btn" style={{ padding: '8px 15px', display: 'flex', alignItems: 'center', gap: '5px', background: '#f39c12', color: 'white' }} onClick={() => openFeedbackModal(req)}>
                       Оцінити
@@ -176,8 +217,17 @@ export default function Profile() {
                   <span style={{ color: '#888', marginRight: '8px', fontSize: '16px' }}>#{req.id}</span>
                   {req.title}
                 </h3>
-                <span className={`request-status ${req.status}`}>{getStatusLabel(req.status)}</span>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '5px' }}>
+                  <span className={`request-status ${req.status}`}>
+                    {getStatusLabel(req.status)}
+                  </span>
+
+                  <span className={`urgency-badge ${req.urgency}`}>
+                    {getUrgencyLabel(req.urgency)}
+                  </span>
               </div>
+
+             </div>
             ))}
           </div>
         )}
