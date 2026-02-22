@@ -42,8 +42,10 @@ export default function Profile() {
   ]);
 
   const acceptedRequests = [
-    { id: '1003', title: "Тепловізор", description: "Pulsar Thermion", location: "Авдіївка", status: "in_progress", urgency: "critical" }
+    { id: '1003', title: "Тепловізор", description: "Pulsar Thermion", location: "Авдіївка", status: "completed", urgency: "critical" }
   ];
+
+  const completedCount = (user.role === 'volunteer' ? acceptedRequests : []).filter(r => r.status === 'completed').length;
 
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [feedbackRequest, setFeedbackRequest] = useState(null);
@@ -63,6 +65,15 @@ export default function Profile() {
     if (urgency === "critical") return "Критична";
     return "—";
   };
+
+  const getTrustLevel = (count) => {
+    if (count >= 20) return { label: "Партнер платформи", key: "partner" };
+    if (count >= 10) return { label: "Перевірений волонтер", key: "verified" };
+    if (count >= 5) return { label: "Надійний волонтер", key: "reliable" };
+    if (count >= 1) return { label: "Активний волонтер", key: "active" };
+    return { label: "Новий волонтер", key: "new" };
+  };
+  const trustLevel = getTrustLevel(completedCount);
 
   const handleRepeatOrder = (req) => {
     navigate('/create-request', { state: { repeatedData: req } });
@@ -123,6 +134,18 @@ export default function Profile() {
                 {user.role === 'military' ? 'Військовий' : 'Волонтер'}
               </span>
             </p>
+
+            {user.role === 'volunteer' && (
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '12px', flexWrap: 'wrap' }}>
+                <span className={`trust-badge ${trustLevel.key}`}>
+                  {trustLevel.label}
+                </span>
+
+                <span className="trust-count">
+                  📦 Виконано запитів: <strong>{completedCount}</strong>
+                </span>
+              </div>
+            )}
           </div>
           <button className="btn" style={{ background: '#e74c3c', color: 'white', padding: '8px 16px', fontWeight: 'bold' }} onClick={handleLogout}>
             Вийти
