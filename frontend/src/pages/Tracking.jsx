@@ -1,112 +1,114 @@
 import React, { useState } from 'react';
 
 export default function Tracking() {
-  const [trackNumber, setTrackNumber] = useState('');
-  const [order, setOrder] = useState(null);
+  const [trackingId, setTrackingId] = useState('');
+  const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const fakeDatabase = [
-    { id: '1001', title: 'Дрон Mavic 3', status: 'completed', date: '18.02.2026', location: 'Купʼянськ' },
-    { id: '1002', title: 'Турнікети CAT (20 шт)', status: 'in_progress', date: '20.02.2026', location: 'Покровськ' },
-    { id: '1003', title: 'Медикаменти (знеболювальні)', status: 'new', date: '21.02.2026', location: 'Бахмутський напрямок' },
-    { id: '1004', title: 'Старлінк V2', status: 'delivering', date: '19.02.2026', location: 'Авдіївка' },
-  ];
-
-  const handleSearch = (e) => {
+  const handleTrack = async (e) => {
     e.preventDefault();
     setError('');
-    setOrder(null);
+    setResult(null);
 
-    if (!trackNumber) return;
+    if (!trackingId.trim()) return;
 
-    const foundOrder = fakeDatabase.find(item => item.id === trackNumber);
+    setIsLoading(true);
 
-    if (foundOrder) {
-      setOrder(foundOrder);
-    } else {
-      setError('Заявку з таким номером не знайдено. Перевірте правильність вводу.');
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/logistics/tracking/${trackingId}/`);
+      const data = await response.json();
+
+      if (response.ok) {
+        setResult(data);
+      } else {
+        setError(data.error || 'Заявку з таким номером не знайдено. Перевірте правильність ID.');
+      }
+    } catch (err) {
+      console.error("Помилка мережі:", err);
+      setError('Не вдалося з\'єднатися з сервером. Перевірте, чи запущений Django.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getStepStatus = (stepIndex, status) => {
-    const statuses = ['new', 'in_progress', 'delivering', 'completed'];
-    const currentStatusIndex = statuses.indexOf(status);
-    return stepIndex <= currentStatusIndex ? 'active' : '';
+  const getStatusBadge = (status, display) => {
+    switch(status) {
+      case 'new': return <span style={{background: '#e0f2fe', color: '#0284c7', padding: '6px 12px', borderRadius: '4px', fontSize: '14px', fontWeight: 'bold'}}>{display}</span>;
+      case 'in_progress': return <span style={{background: '#fef08a', color: '#a16207', padding: '6px 12px', borderRadius: '4px', fontSize: '14px', fontWeight: 'bold'}}>{display}</span>;
+      case 'completed': return <span style={{background: '#dcfce7', color: '#15803d', padding: '6px 12px', borderRadius: '4px', fontSize: '14px', fontWeight: 'bold'}}>{display}</span>;
+      case 'rejected': return <span style={{background: '#fee2e2', color: '#e74c3c', padding: '6px 12px', borderRadius: '4px', fontSize: '14px', fontWeight: 'bold'}}>{display}</span>;
+      case 'awaiting_purchase': return <span style={{background: '#f3e8ff', color: '#7e22ce', padding: '6px 12px', borderRadius: '4px', fontSize: '14px', fontWeight: 'bold'}}>{display}</span>;
+      default: return <span style={{background: '#eee', color: '#333', padding: '6px 12px', borderRadius: '4px', fontSize: '14px', fontWeight: 'bold'}}>{display || status}</span>;
+    }
   };
 
   return (
-    <section className="section">
-      <div className="container" style={{ maxWidth: '600px', margin: 'auto' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '10px' }}>Трекінг заявки</h2>
-        <p style={{ textAlign: 'center', color: '#555', marginBottom: '30px' }}>
-          Введіть номер вашого запиту, щоб дізнатися його статус. <br/>
-          <em>(Тестові номери: 1001, 1002, 1003, 1004)</em>
-        </p>
+    <section className="section" style={{ background: '#f9f8f6', minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 20px' }}>
 
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '10px', marginBottom: '30px' }}>
-          <input
-            className="input"
-            style={{ marginBottom: 0, flex: 1, fontSize: '18px', padding: '12px' }}
-            type="text"
-            placeholder="Номер заявки (напр. 1002)"
-            value={trackNumber}
-            onChange={(e) => setTrackNumber(e.target.value)}
-          />
-          <button className="btn btn-primary" type="submit" style={{ padding: '0 25px' }}>Знайти</button>
-        </form>
-
-        {error && (
-          <div className="card" style={{ background: '#ffebee', color: '#c0392b', border: '1px solid #ef9a9a' }}>
-            {error}
-          </div>
-        )}
-
-        {order && (
-          <div className="card" style={{ padding: '30px' }}>
-            <h3 style={{ marginTop: 0 }}>{order.title}</h3>
-            <p style={{ color: '#555', marginBottom: '5px' }}><strong>Номер:</strong> #{order.id}</p>
-            <p style={{ color: '#555', marginBottom: '5px' }}><strong>Локація:</strong> 📍 {order.location}</p>
-            <p style={{ color: '#555', marginBottom: '25px' }}><strong>Дата створення:</strong> {order.date}</p>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', marginTop: '40px' }}>
-              <div style={{ position: 'absolute', top: '15px', left: '10%', right: '10%', height: '4px', background: '#eee', zIndex: 1 }}></div>
-
-              <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', width: '25%' }}>
-                <div style={{
-                  width: '34px', height: '34px', margin: '0 auto 10px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'white',
-                  background: getStepStatus(0, order.status) ? '#2ecc71' : '#ccc'
-                }}>1</div>
-                <div style={{ fontSize: '12px', fontWeight: getStepStatus(0, order.status) ? 'bold' : 'normal', color: getStepStatus(0, order.status) ? '#333' : '#999' }}>Створено</div>
-              </div>
-
-              <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', width: '25%' }}>
-                <div style={{
-                  width: '34px', height: '34px', margin: '0 auto 10px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'white',
-                  background: getStepStatus(1, order.status) ? '#F4A261' : '#ccc'
-                }}>2</div>
-                <div style={{ fontSize: '12px', fontWeight: getStepStatus(1, order.status) ? 'bold' : 'normal', color: getStepStatus(1, order.status) ? '#333' : '#999' }}>В роботі</div>
-              </div>
-
-              <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', width: '25%' }}>
-                <div style={{
-                  width: '34px', height: '34px', margin: '0 auto 10px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'white',
-                  background: getStepStatus(2, order.status) ? '#3498db' : '#ccc'
-                }}>3</div>
-                <div style={{ fontSize: '12px', fontWeight: getStepStatus(2, order.status) ? 'bold' : 'normal', color: getStepStatus(2, order.status) ? '#333' : '#999' }}>В дорозі</div>
-              </div>
-
-              <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', width: '25%' }}>
-                <div style={{
-                  width: '34px', height: '34px', margin: '0 auto 10px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'white',
-                  background: getStepStatus(3, order.status) ? '#27ae60' : '#ccc'
-                }}>✓</div>
-                <div style={{ fontSize: '12px', fontWeight: getStepStatus(3, order.status) ? 'bold' : 'normal', color: getStepStatus(3, order.status) ? '#333' : '#999' }}>Доставлено</div>
-              </div>
-            </div>
-
-          </div>
-        )}
+      <div style={{ maxWidth: '500px', width: '100%', textAlign: 'center', marginBottom: '40px' }}>
+        <h2 style={{ color: '#2C3E50', marginBottom: '10px', fontSize: '32px' }}>Відстежити запит</h2>
+        <p style={{ color: '#666', fontSize: '16px' }}>Введіть ID вашого запиту, щоб дізнатися його актуальний статус.</p>
       </div>
+
+      <div className="card" style={{ maxWidth: '500px', width: '100%', padding: '30px' }}>
+        <form onSubmit={handleTrack} style={{ display: 'flex', gap: '10px' }}>
+          <input
+            type="number"
+            className="input"
+            placeholder="Наприклад: 1"
+            value={trackingId}
+            onChange={(e) => setTrackingId(e.target.value)}
+            required
+            style={{ marginBottom: 0, flex: '1', fontSize: '18px', padding: '12px' }}
+          />
+          <button type="submit" className="btn btn-primary" disabled={isLoading} style={{ padding: '0 25px', fontSize: '16px' }}>
+            {isLoading ? 'Пошук...' : 'Знайти'}
+          </button>
+        </form>
+      </div>
+
+      {error && (
+        <div style={{ background: '#fee2e2', color: '#ef4444', padding: '15px', borderRadius: '8px', marginTop: '20px', maxWidth: '500px', width: '100%', textAlign: 'center', fontWeight: 'bold' }}>
+          {error}
+        </div>
+      )}
+
+      {result && (
+        <div className="card" style={{ maxWidth: '500px', width: '100%', padding: '30px', marginTop: '20px', borderTop: '4px solid #3A5A40' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '15px' }}>
+            <div>
+              <p style={{ margin: '0 0 5px 0', color: '#888', fontSize: '14px' }}>Номер запиту</p>
+              <h3 style={{ margin: 0, fontSize: '24px', color: '#2C3E50' }}>#{result.id}</h3>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ margin: '0 0 5px 0', color: '#888', fontSize: '14px' }}>Статус</p>
+              {getStatusBadge(result.status, result.status_display)}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '15px' }}>
+            <p style={{ margin: '0 0 5px 0', color: '#888', fontSize: '14px' }}>Що потрібно</p>
+            <p style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#333' }}>{result.title}</p>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div>
+              <p style={{ margin: '0 0 5px 0', color: '#888', fontSize: '14px' }}>Терміновість</p>
+              <p style={{ margin: 0, fontSize: '14px', fontWeight: 'bold', color: '#e74c3c' }}>
+                {result.urgency === 'critical' ? 'Критична' : result.urgency === 'high' ? 'Висока' : result.urgency === 'medium' ? 'Середня' : 'Низька'}
+              </p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ margin: '0 0 5px 0', color: '#888', fontSize: '14px' }}>Дата створення</p>
+              <p style={{ margin: 0, fontSize: '14px', color: '#333', fontWeight: 'bold' }}>
+                {new Date(result.created_at).toLocaleDateString('uk-UA')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
     </section>
   );
 }

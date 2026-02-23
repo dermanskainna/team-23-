@@ -1,125 +1,188 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Warehouse() {
-  const [inventory, setInventory] = useState([
-    { id: 1, name: 'Квадрокоптер DJI Mavic 3', category: 'Електроніка', quantity: 5 },
-    { id: 2, name: 'Турнікет CAT 7', category: 'Медицина', quantity: 150 },
-    { id: 3, name: 'Спальний мішок зимовий', category: 'Амуніція', quantity: 30 },
-    { id: 4, name: 'Тепловізор Pulsar', category: 'Електроніка', quantity: 2 },
-  ]);
+  const navigate = useNavigate();
 
-  const [showForm, setShowForm] = useState(false);
+  const [inventory, setInventory] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const [newItem, setNewItem] = useState({ name: '', category: '', quantity: '' });
-  const [activeCategory, setActiveCategory] = useState('Всі');
+  const [newItem, setNewItem] = useState({
+    name: '',
+    category: 'other',
+    quantity: 0
+  });
+  const [isAdding, setIsAdding] = useState(false);
 
-  const handleAddItem = (e) => {
-    e.preventDefault();
-    if (!newItem.name || !newItem.quantity || !newItem.category) return;
+  useEffect(() => {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    if (!savedUser || !savedUser.token || savedUser.role !== 'volunteer') {
+      navigate('/login');
+      return;
+    }
+    fetchInventory(savedUser.token);
+  }, [navigate]);
 
-    const itemToAdd = {
-      id: Date.now(),
-      name: newItem.name,
-      category: newItem.category,
-      quantity: Number(newItem.quantity)
-    };
-
-    setInventory([...inventory, itemToAdd]);
-    setNewItem({ name: '', category: '', quantity: '' });
-    setShowForm(false);
+  const fetchInventory = async (token) => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/logistics/warehouse/', {
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setInventory(data);
+      } else {
+        setError('Не вдалося завантажити склад');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Помилка мережі при завантаженні складу');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const categories = ['Всі', ...new Set(inventory.map(item => item.category))];
-  const filteredInventory = activeCategory === 'Всі'
-    ? inventory
-    : inventory.filter(item => item.category === activeCategory);
+  const handleAddItem = async (e) => {
+    e.preventDefault();
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    setIsAdding(true);
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/logistics/warehouse/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${savedUser.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newItem)
+      });
+
+      if (response.ok) {
+        const addedItem = await response.json();
+        setInventory([...inventory, addedItem]);
+        setNewItem({ name: '', category: 'other', quantity: 0 });
+      } else {
+        const errorData = await response.json();
+        alert("Django каже: " + JSON.stringify(errorData));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Помилка мережі");
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  const getCategoryColor = (category) => {
+    switch(category) {
+      case 'medicine': return '#ef4444';
+      case 'drones': return '#3b82f6';
+      case 'ammunition': return '#10b981';
+      case 'vehicles': return '#f59e0b';
+      default: return '#6b7280';
+    }
+  };
 
   return (
-    <section className="section">
+    <section className="section" style={{ background: '#f9f8f6', minHeight: '80vh', padding: '40px 0' }}>
       <div className="container">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2>Склад та Інвентар</h2>
-          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-            {showForm ? 'Скасувати' : '+ Додати товар'}
-          </button>
-        </div>
+        <h2 style={{ marginBottom: "20px", color: "#2C3E50" }}>Склад ресурсів</h2>
 
-        {showForm && (
-          <div className="card" style={{ marginBottom: '30px', background: '#eaf4f0' }}>
-            <h3>Нове надходження</h3>
-            <form onSubmit={handleAddItem} style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <input
-                className="input"
-                style={{ marginBottom: 0, flex: '1' }}
-                type="text"
-                placeholder="Назва товару"
-                value={newItem.name}
-                onChange={(e) => setNewItem({...newItem, name: e.target.value})}
-              />
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
 
-              <select
-                className="input"
-                style={{ marginBottom: 0, width: '200px' }}
-                value={newItem.category}
-                onChange={(e) => setNewItem({...newItem, category: e.target.value})}
-              >
-                <option value="" disabled>Оберіть категорію</option>
-                <option value="Електроніка">Електроніка</option>
-                <option value="Медицина">Медицина</option>
-                <option value="Амуніція">Амуніція</option>
-                <option value="Транспорт">Транспорт</option>
-                <option value="Їжа та Вода">Їжа та Вода</option>
-                <option value="Інше">Інше</option>
-              </select>
+          <div className="card" style={{ flex: '2', minWidth: '300px', padding: '20px' }}>
+            <h3 style={{ marginTop: 0, borderBottom: '1px solid #eee', paddingBottom: '15px' }}>Наявні ресурси</h3>
 
-              <input
-                className="input"
-                style={{ marginBottom: 0, width: '120px' }}
-                type="number"
-                placeholder="Кількість"
-                value={newItem.quantity}
-                onChange={(e) => setNewItem({...newItem, quantity: e.target.value})}
-              />
-
-              <button className="btn btn-accent" type="submit">Зберегти</button>
-            </form>
+            {isLoading ? (
+              <p style={{ textAlign: 'center', color: '#888' }}>Завантаження складу...</p>
+            ) : error ? (
+              <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>
+            ) : inventory.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#888', padding: '20px' }}>Склад наразі порожній.</p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px' }}>
+                  <thead>
+                    <tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
+                      <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Назва</th>
+                      <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Категорія</th>
+                      <th style={{ padding: '12px', borderBottom: '2px solid #ddd', textAlign: 'center' }}>Кількість</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {inventory.map(item => (
+                      <tr key={item.id} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={{ padding: '12px', fontWeight: 'bold', color: '#2C3E50' }}>{item.name}</td>
+                        <td style={{ padding: '12px' }}>
+                          <span style={{
+                            background: getCategoryColor(item.category) + '20',
+                            color: getCategoryColor(item.category),
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontWeight: 'bold'
+                          }}>
+                            {item.category_display || item.category}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px', textAlign: 'center', fontSize: '16px', fontWeight: 'bold' }}>
+                          {item.quantity} шт.
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
 
-        <div className="tabs" style={{ marginBottom: '20px' }}>
-          {categories.map((cat, index) => (
-            <button
-              key={index}
-              className={`tab-btn ${activeCategory === cat ? 'active' : ''}`}
-              onClick={() => setActiveCategory(cat)}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+          <div className="card" style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#fff' }}>
+            <h3 style={{ marginTop: 0, borderBottom: '1px solid #eee', paddingBottom: '15px' }}>+ Додати партію</h3>
 
-        <div className="card">
-          {filteredInventory.length === 0 ? (
-            <p>У цій категорії немає товарів.</p>
-          ) : (
-            <div style={{ width: '100%' }}>
-              <div style={{ display: 'flex', fontWeight: 'bold', borderBottom: '2px solid #ddd', paddingBottom: '10px', marginBottom: '10px' }}>
-                <div style={{ flex: '2' }}>Назва</div>
-                <div style={{ flex: '1' }}>Категорія</div>
-                <div style={{ flex: '1', textAlign: 'center' }}>Залишок</div>
+            <form onSubmit={handleAddItem} style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '15px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: 'bold', color: '#555' }}>Назва товару</label>
+                <input
+                  type="text" className="input" placeholder="Напр. Турнікети СІЧ" required
+                  value={newItem.name} onChange={(e) => setNewItem({...newItem, name: e.target.value})}
+                  style={{ marginBottom: 0 }}
+                />
               </div>
 
-              {filteredInventory.map((item) => (
-                <div key={item.id} style={{ display: 'flex', padding: '10px 0', borderBottom: '1px solid #eee' }}>
-                  <div style={{ flex: '2' }}>{item.name}</div>
-                  <div style={{ flex: '1' }}>
-                    <span className="status-badge volunteer" style={{ background: '#78B27C' }}>{item.category}</span>
-                  </div>
-                  <div style={{ flex: '1', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity} шт.</div>
-                </div>
-              ))}
-            </div>
-          )}
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: 'bold', color: '#555' }}>Категорія</label>
+                <select
+                  className="input"
+                  value={newItem.category} onChange={(e) => setNewItem({...newItem, category: e.target.value})}
+                  style={{ marginBottom: 0 }}
+                >
+                  <option value="medicine">Медицина</option>
+                  <option value="drones">Дрони та електроніка</option>
+                  <option value="ammunition">Амуніція</option>
+                  <option value="vehicles">Транспорт</option>
+                  <option value="other">Інше</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: 'bold', color: '#555' }}>Кількість (шт)</label>
+                <input
+                  type="number" className="input" min="1" required
+                  value={newItem.quantity} onChange={(e) => setNewItem({...newItem, quantity: parseInt(e.target.value) || 0})}
+                  style={{ marginBottom: 0 }}
+                />
+              </div>
+
+              <button type="submit" className="btn btn-primary" disabled={isAdding} style={{ padding: '10px' }}>
+                {isAdding ? 'Додавання...' : 'Зберегти на склад'}
+              </button>
+            </form>
+          </div>
+
         </div>
       </div>
     </section>

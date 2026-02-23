@@ -1,61 +1,91 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function Profile() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [activeTab, setActiveTab] = useState('requests');
 
-  const [user, setUser] = useState({
-    email: 'example@email.com',
-    role: 'military',
-    fullName: '',
+  const [requests, setRequests] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const [formData, setFormData] = useState({
+    full_name: '',
     phone: '',
     organization: ''
   });
 
-  const [activeTab, setActiveTab] = useState('published');
-
-  const [formData, setFormData] = useState({ fullName: '', phone: '', organization: '' });
-
   useEffect(() => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
-    if (savedUser) {
-      const fullUserData = {
-        ...savedUser,
-        fullName: savedUser.fullName || '',
-        phone: savedUser.phone || '',
-        organization: savedUser.organization || ''
-      };
-      setUser(fullUserData);
-      const savedPublished = JSON.parse(localStorage.getItem("publishedRequests"));
-      if (savedPublished) {
-        setPublishedRequests(savedPublished);
-      }
-      setFormData(fullUserData);
-
-      if (savedUser.role === 'volunteer') setActiveTab('accepted');
+    if (!savedUser || !savedUser.token) {
+      navigate('/login');
+      return;
     }
-  }, []);
 
-  const [publishedRequests, setPublishedRequests] = useState([
-    { id: '1001', title: "Медикаменти", description: "Бинти (50шт), знеболювальні (10 пачок)", location: "Бахмутський напрямок", status: "active", urgency: "high" },
-    { id: '1002', title: "Дрон Mavic 3", description: "Стандартна комплектація + 2 додаткові батареї", location: "Куп'янськ", status: "completed", feedback: null, urgency: "medium" }
-  ]);
+    setUser(savedUser);
+    setFormData({
+      full_name: savedUser.full_name || '',
+      phone: savedUser.phone || '',
+      organization: savedUser.organization || ''
+    });
 
-  const acceptedRequests = [
-    { id: '1003', title: "Тепловізор", description: "Pulsar Thermion", location: "Авдіївка", status: "completed", urgency: "critical" }
-  ];
+    if (savedUser.role === 'volunteer') {
+      setActiveTab('accepted');
+    }
 
-  const completedCount = (user.role === 'volunteer' ? acceptedRequests : []).filter(r => r.status === 'completed').length;
+    fetchRequests(savedUser.token);
+  }, [navigate]);
 
-  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
-  const [feedbackRequest, setFeedbackRequest] = useState(null);
-  const [rating, setRating] = useState(0);
-  const [feedbackText, setFeedbackText] = useState('');
+  const fetchRequests = async (token) => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/logistics/requests/', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRequests(data);
+      } else {
+        setError('Не вдалося завантажити заявки');
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError('Помилка мережі при завантаженні заявок');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (!user) return;
+    try {
+      await fetch('http://127.0.0.1:8000/api/users/logout/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${user.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch(e) {
+      console.error(e);
+    }
+
+    localStorage.removeItem("user");
+    navigate('/login');
+  };
 
   const getStatusLabel = (status) => {
-    if (status === "active") return "Активний";
-    if (status === "in_progress") return "В процесі";
+    if (status === "new") return "Шукаємо волонтера";
+    if (status === "in_progress") return "В роботі";
     if (status === "completed") return "Виконано";
+    if (status === "rejected") return "Відхилено";
+    if (status === "awaiting_purchase") return "Очікує закупівлі";
+    return status;
   };
 
   const getUrgencyLabel = (urgency) => {
@@ -66,237 +96,139 @@ export default function Profile() {
     return "—";
   };
 
-  const getTrustLevel = (count) => {
-    if (count >= 20) return { label: "Партнер платформи", key: "partner" };
-    if (count >= 10) return { label: "Перевірений волонтер", key: "verified" };
-    if (count >= 5) return { label: "Надійний волонтер", key: "reliable" };
-    if (count >= 1) return { label: "Активний волонтер", key: "active" };
-    return { label: "Новий волонтер", key: "new" };
-  };
-  const trustLevel = getTrustLevel(completedCount);
-
   const handleRepeatOrder = (req) => {
     navigate('/create-request', { state: { repeatedData: req } });
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    navigate("/login");
-  };
-
-  const openFeedbackModal = (req) => {
-    setFeedbackRequest(req);
-    setIsFeedbackModalOpen(true);
-  };
-
-  const submitFeedback = () => {
-    if (rating === 0) {
-      alert("Будь ласка, поставте оцінку зірочками!");
-      return;
-    }
-    setPublishedRequests(publishedRequests.map(req =>
-      req.id === feedbackRequest.id ? { ...req, feedback: { rating, text: feedbackText } } : req
-    ));
-    setIsFeedbackModalOpen(false);
-    setFeedbackRequest(null);
-    setRating(0);
-    setFeedbackText('');
-  };
-
-  const handleSaveSettings = (e) => {
-    e.preventDefault();
-    const updatedUser = { ...user, ...formData };
-
-    setUser(updatedUser);
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-
-    alert("Дані профілю успішно оновлено!");
-  };
+  if (!user) return null;
 
   return (
-    <section className="section">
-      <div className="container" style={{ position: 'relative' }}>
+    <section className="section" style={{ background: '#f9f8f6', minHeight: '80vh', padding: '40px 0' }}>
+      <div className="container">
+        <div className="card" style={{ padding: '30px', maxWidth: '800px', margin: '0 auto' }}>
 
-        <div className="card profile-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '30px' }}>
-          <div>
-            <h2>{user.fullName ? user.fullName : "Мій профіль"}</h2>
-            <p style={{ color: '#555', marginBottom: '10px' }}><strong>Email:</strong> {user.email}</p>
-            {user.phone && <p style={{ color: '#555', marginBottom: '10px' }}><strong>Телефон:</strong> {user.phone}</p>}
-            {user.organization && (
-              <p style={{ color: '#555', marginBottom: '10px' }}>
-                <strong>{user.role === 'military' ? 'Підрозділ:' : 'Організація:'}</strong> {user.organization}
-              </p>
-            )}
-
-            <p style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '15px' }}>
-              <strong>Статус:</strong>
-              <span className={`status-badge ${user.role === 'military' ? 'military' : 'volunteer'}`}>
-                {user.role === 'military' ? 'Військовий' : 'Волонтер'}
-              </span>
-            </p>
-
-            {user.role === 'volunteer' && (
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '12px', flexWrap: 'wrap' }}>
-                <span className={`trust-badge ${trustLevel.key}`}>
-                  {trustLevel.label}
-                </span>
-
-                <span className="trust-count">
-                  📦 Виконано запитів: <strong>{completedCount}</strong>
-                </span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <div style={{ width: '60px', height: '60px', background: '#3A5A40', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 'bold' }}>
+                {user.username.charAt(0).toUpperCase()}
               </div>
-            )}
-          </div>
-          <button className="btn" style={{ background: '#e74c3c', color: 'white', padding: '8px 16px', fontWeight: 'bold' }} onClick={handleLogout}>
-            Вийти
-          </button>
-        </div>
-
-        <div className="tabs" style={{ marginBottom: '20px' }}>
-          {user.role === 'military' && (
-            <button className={`tab-btn ${activeTab === 'published' ? 'active' : ''}`} onClick={() => setActiveTab('published')}>
-              Опубліковані ({publishedRequests.length})
+              <div>
+                <h2 style={{ margin: 0, color: '#2C3E50' }}>{user.full_name || user.username}</h2>
+                <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
+                  {user.role === 'military' ? 'Військовий' : 'Волонтер'} {user.organization ? `| ${user.organization}` : ''}
+                </p>
+              </div>
+            </div>
+            <button onClick={handleLogout} className="btn" style={{ background: '#e74c3c', color: 'white', border: 'none', padding: '10px 20px' }}>
+              Вийти
             </button>
-          )}
-          {user.role === 'volunteer' && (
-            <button className={`tab-btn ${activeTab === 'accepted' ? 'active' : ''}`} onClick={() => setActiveTab('accepted')}>
-              Прийняті ({acceptedRequests.length})
+          </div>
+
+          <div className="profile-tabs" style={{ display: 'flex', gap: '20px', marginBottom: '20px', borderBottom: '1px solid #ddd', paddingBottom: '10px' }}>
+            {user.role === 'military' ? (
+              <button
+                className={`tab-btn ${activeTab === 'requests' ? 'active' : ''}`}
+                onClick={() => setActiveTab('requests')}
+                style={{ background: 'none', border: 'none', fontSize: '16px', fontWeight: activeTab === 'requests' ? 'bold' : 'normal', color: activeTab === 'requests' ? '#3A5A40' : '#888', cursor: 'pointer' }}
+              >
+                Мої запити
+              </button>
+            ) : (
+              <button
+                className={`tab-btn ${activeTab === 'accepted' ? 'active' : ''}`}
+                onClick={() => setActiveTab('accepted')}
+                style={{ background: 'none', border: 'none', fontSize: '16px', fontWeight: activeTab === 'accepted' ? 'bold' : 'normal', color: activeTab === 'accepted' ? '#3A5A40' : '#888', cursor: 'pointer' }}
+              >
+                Взяті в роботу
+              </button>
+            )}
+            <button
+              className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
+              onClick={() => setActiveTab('settings')}
+              style={{ background: 'none', border: 'none', fontSize: '16px', fontWeight: activeTab === 'settings' ? 'bold' : 'normal', color: activeTab === 'settings' ? '#3A5A40' : '#888', cursor: 'pointer' }}
+            >
+              Налаштування
             </button>
+          </div>
+
+          {activeTab === 'requests' && user.role === 'military' && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h3 style={{ margin: 0 }}>Історія запитів</h3>
+                <Link to="/create-request" className="btn btn-primary" style={{ padding: '8px 15px', textDecoration: 'none' }}>
+                  + Новий запит
+                </Link>
+              </div>
+
+              {isLoading ? (
+                <p style={{ textAlign: 'center', color: '#888' }}>Завантаження заявок...</p>
+              ) : error ? (
+                <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>
+              ) : requests.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px', background: '#f9f9f9', borderRadius: '8px', color: '#888' }}>
+                  Ви ще не створювали запитів.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  {requests.map(req => (
+                    <div key={req.id} className="card" style={{ padding: '20px', border: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <h3 style={{ margin: '0 0 10px 0', fontSize: '18px' }}>
+                          <span style={{ color: '#888', marginRight: '8px', fontSize: '16px' }}>#{req.id}</span>
+                          {req.title}
+                        </h3>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                          <span className={`request-status ${req.status}`}>{getStatusLabel(req.status)}</span>
+                          <span className={`urgency-badge ${req.urgency}`}>{getUrgencyLabel(req.urgency)}</span>
+                        </div>
+                        <p style={{ margin: '10px 0 0 0', color: '#666', fontSize: '14px' }}>Локація: {req.location}</p>
+
+                        {req.reject_reason && req.status === 'rejected' && (
+                          <p style={{ margin: '10px 0 0 0', color: '#e74c3c', fontSize: '14px', fontWeight: 'bold' }}>
+                            Причина: {req.reject_reason}
+                          </p>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button className="btn" style={{ padding: '8px 15px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }} onClick={() => handleRepeatOrder(req)}>
+                          Повторити
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
-          <button className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
-            Налаштування
-          </button>
-        </div>
+          {activeTab === 'accepted' && user.role === 'volunteer' && (
+            <div>
+               <h3 style={{ margin: '0 0 20px 0' }}>Заявки в роботі</h3>
+               <p style={{ color: '#888' }}>Тут будуть заявки, які ви взяли в роботу на Дашборді.</p>
+            </div>
+          )}
 
-        {activeTab === 'published' && user.role === 'military' && (
-          <div className="tab-content active">
-            {publishedRequests.map((req) => (
-              <div key={req.id} className="card request-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+          {activeTab === 'settings' && (
+            <div style={{ maxWidth: '400px' }}>
+              <form style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 <div>
-                  <h3 style={{ margin: '0 0 5px 0' }}>
-                    <span style={{ color: '#888', marginRight: '8px', fontSize: '16px' }}>#{req.id}</span>
-                    {req.title}
-                  </h3>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <span className={`request-status ${req.status}`}>{getStatusLabel(req.status)}</span>
-
-                    <span className={`urgency-badge ${req.urgency}`}>
-                      {getUrgencyLabel(req.urgency)}
-                    </span>
-
-                    {req.feedback && (
-                      <span style={{ fontSize: '13px', color: '#f39c12', fontWeight: 'bold' }}>
-                        {'★'.repeat(req.feedback.rating)}{'☆'.repeat(5 - req.feedback.rating)} Оцінено
-                      </span>
-                    )}
-                  </div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>ПІБ</label>
+                  <input type="text" className="input" value={formData.full_name} onChange={(e) => setFormData({...formData, full_name: e.target.value})} />
                 </div>
-
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-
-                  {req.status === 'completed' && !req.feedback && (
-                    <button className="btn" style={{ padding: '8px 15px', display: 'flex', alignItems: 'center', gap: '5px', background: '#f39c12', color: 'white' }} onClick={() => openFeedbackModal(req)}>
-                      Оцінити
-                    </button>
-                  )}
-                  <button className="btn btn-primary" style={{ padding: '8px 15px', display: 'flex', alignItems: 'center', gap: '5px' }} onClick={() => handleRepeatOrder(req)}>
-                    Повторити
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {activeTab === 'accepted' && user.role === 'volunteer' && (
-          <div className="tab-content active">
-            {acceptedRequests.map((req) => (
-              <div key={req.id} className="card request-card" style={{ marginBottom: '15px' }}>
-                <h3 style={{ margin: '0 0 5px 0' }}>
-                  <span style={{ color: '#888', marginRight: '8px', fontSize: '16px' }}>#{req.id}</span>
-                  {req.title}
-                </h3>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '5px' }}>
-                  <span className={`request-status ${req.status}`}>
-                    {getStatusLabel(req.status)}
-                  </span>
-
-                  <span className={`urgency-badge ${req.urgency}`}>
-                    {getUrgencyLabel(req.urgency)}
-                  </span>
-              </div>
-
-             </div>
-            ))}
-          </div>
-        )}
-
-        {activeTab === 'settings' && (
-          <div className="tab-content active">
-            <div className="card" style={{ maxWidth: '600px' }}>
-              <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#2C3E50' }}>Редагування профілю</h3>
-
-              <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555', fontSize: '14px' }}>ПІБ або Позивний</label>
-                  <input
-                    className="input" style={{ marginBottom: 0 }} type="text"
-                    placeholder="Напр., Іван Петренко"
-                    value={formData.fullName} onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                  />
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>Телефон</label>
+                  <input type="text" className="input" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
                 </div>
-
                 <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555', fontSize: '14px' }}>Номер телефону</label>
-                  <input
-                    className="input" style={{ marginBottom: 0 }} type="tel"
-                    placeholder="+380..."
-                    value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  />
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>{user.role === 'military' ? 'Підрозділ' : 'Волонтерський фонд'}</label>
+                  <input type="text" className="input" value={formData.organization} onChange={(e) => setFormData({...formData, organization: e.target.value})} />
                 </div>
-
-                <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555', fontSize: '14px' }}>
-                    {user.role === 'military' ? 'Підрозділ / Бригада' : 'Фонд / Волонтерська організація'}
-                  </label>
-                  <input
-                    className="input" style={{ marginBottom: 0 }} type="text"
-                    placeholder={user.role === 'military' ? "Напр., 3 ОШБр" : "Напр., БФ Повернись Живим"}
-                    value={formData.organization} onChange={(e) => setFormData({...formData, organization: e.target.value})}
-                  />
-                </div>
-
-                <button type="submit" className="btn btn-primary" style={{ marginTop: '10px', width: '200px' }}>
-                  Зберегти зміни
-                </button>
+                <button type="button" className="btn btn-primary" onClick={() => alert("Оновлення профілю буде підключено згодом!")}>Зберегти зміни</button>
               </form>
             </div>
-          </div>
-        )}
+          )}
 
-        {isFeedbackModalOpen && (
-          <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-            <div className="card" style={{ width: '400px', background: 'white', padding: '30px' }}>
-              <h3 style={{ marginTop: 0 }}>Оцінка виконання</h3>
-              <p style={{ fontSize: '14px', color: '#555' }}>Замовлення: <strong>#{feedbackRequest?.id} {feedbackRequest?.title}</strong></p>
-
-              <div style={{ display: 'flex', gap: '5px', fontSize: '30px', cursor: 'pointer', marginBottom: '15px', color: '#f39c12' }}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span key={star} onClick={() => setRating(star)}>{star <= rating ? '★' : '☆'}</span>
-                ))}
-              </div>
-
-              <textarea className="input" style={{ height: '80px', width: '100%', resize: 'none' }} placeholder="Напишіть ваш відгук або скаргу..." value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} />
-
-              <div style={{ display: 'flex', gap: '10px', marginTop: '15px', justifyContent: 'flex-end' }}>
-                <button className="btn" style={{ background: '#ddd' }} onClick={() => setIsFeedbackModalOpen(false)}>Скасувати</button>
-                <button className="btn btn-primary" onClick={submitFeedback}>Відправити</button>
-              </div>
-            </div>
-          </div>
-        )}
-
+        </div>
       </div>
     </section>
   );
