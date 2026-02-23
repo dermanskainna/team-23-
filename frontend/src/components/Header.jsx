@@ -1,6 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
+const Logo = () => (
+  <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', textDecoration: 'none' }}>
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org">
+      <path
+        d="M12 2L4 6V12C4 17.5 7.5 21.5 12 23C16.5 21.5 20 17.5 20 12V6L12 2Z"
+        stroke="white" strokeWidth="1.8" strokeLinejoin="round"
+      />
+      <path
+        d="M8 13C8 13 9.5 15.5 12 15.5C14.5 15.5 16 13 16 13"
+        stroke="white" strokeWidth="1.8" strokeLinecap="round"
+      />
+      <path
+        d="M10 18.5L12 20.5L14 18.5"
+        stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+      />
+    </svg>
+    <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.1' }}>
+      <span style={{ color: 'white', fontWeight: '800', fontSize: '18px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+        Варта
+      </span>
+      <span style={{ color: '#F4A261', fontSize: '9px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+        VOLUNTEER HUB
+      </span>
+    </div>
+  </Link>
+);
+
 export default function Header() {
   const [isLiteMode, setIsLiteMode] = useState(false);
   const [userRole, setUserRole] = useState(null);
@@ -30,58 +57,74 @@ export default function Header() {
   };
 
   return (
-    <header className="navbar">
-      <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div className="logo">Logo</div>
+    <header className="navbar" style={{
+      background: '#3A5A40',
+      padding: '12px 0',
+      borderBottom: '1px solid rgba(255,255,255,0.1)'
+    }}>
+      <div className="container" style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '0 20px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
 
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <Link to="/">Головна</Link>
+        <Logo />
 
-          {!userRole && <Link to="/login">Увійти</Link>}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <Link to="/" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>Головна</Link>
 
-          {userRole && <Link to="/tracking">Трекінг</Link>}
+          {!userRole && <Link to="/login" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>Увійти</Link>}
+
+          {userRole && <Link to="/tracking" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>Трекінг</Link>}
 
           {userRole === 'military' && (
             <>
-              <Link to="/create-request">Новий запит</Link>
-              <Link to="/profile">Мої запити</Link>
+              <Link to="/create-request" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>Новий запит</Link>
+              <Link to="/profile" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>Мої запити</Link>
             </>
           )}
 
           {userRole === 'volunteer' && (
             <>
-              <Link to="/dashboard">Дашборд</Link>
-              <Link to="/warehouse">Склад</Link>
-              <Link to="/profile">Профіль</Link>
+              <Link to="/dashboard" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>Дашборд</Link>
+              <Link to="/warehouse" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>Склад</Link>
+              <Link to="/profile" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>Профіль</Link>
             </>
           )}
 
           <button
             onClick={() => setIsLiteMode(!isLiteMode)}
             style={{
-              background: isLiteMode ? '#F4A261' : 'transparent',
-              border: '1px solid white', color: 'white', padding: '6px 12px',
-              borderRadius: '6px', cursor: 'pointer', marginLeft: '10px', fontWeight: 'bold'
+              background: isLiteMode ? '#F4A261' : 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.4)',
+              color: 'white',
+              padding: '6px 14px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              marginLeft: '10px',
+              fontWeight: 'bold',
+              fontSize: '13px',
+              transition: '0.3s'
             }}
-            title="Оптимізація для поганого інтернету"
           >
-            {isLiteMode ? 'Зв\'язок: Поганий' : 'Зв\'язок: Ок'}
+            {isLiteMode ? "Зв'язок: Поганий" : "Зв'язок: Ок"}
           </button>
 
           {userRole && (
             <button
               onClick={handleEmergencyExit}
               style={{
-                background: '#c0392b', border: 'none', color: 'white', padding: '6px 12px',
-                borderRadius: '6px', cursor: 'pointer', marginLeft: '5px', fontWeight: 'bold',
-                display: 'flex', alignItems: 'center', gap: '5px'
+                background: '#c0392b', border: 'none', color: 'white', padding: '8px',
+                borderRadius: '6px', cursor: 'pointer', marginLeft: '5px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}
-              title="Екстрене знищення сесії та вихід"
             >
               🚨
             </button>
           )}
-
         </nav>
       </div>
     </header>

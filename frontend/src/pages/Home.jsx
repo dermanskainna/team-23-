@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import heroIllustration from '../assets/hero-image.png';
 
 export default function Home() {
   const [userRole, setUserRole] = useState(null);
@@ -47,70 +48,118 @@ export default function Home() {
 
   return (
     <>
-      <section className="hero">
-        <div className="container">
-          <h1>Назва застосунку</h1>
-          <p>Платформа централізованого волонтерства</p>
+      <section className="hero" style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', minHeight: '450px' }}>
+        <div className="container" style={{ position: 'relative', zIndex: 2 }}>
+          <h1 style={{ maxWidth: '600px' }}>ВАРТА</h1>
+          <p style={{ maxWidth: '500px' }}>Платформа централізованого волонтерства</p>
           <Link to={buttonLink}>
             <button className="btn btn-primary">{buttonText}</button>
           </Link>
         </div>
-      </section>
 
-      <section className="section" style={{ background: '#f9f8f6', padding: '60px 0 80px' }}>
-        <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-
-          <h2 style={{
-            fontSize: '36px', fontWeight: '900', textTransform: 'uppercase',
-            color: '#2C3E50', marginBottom: '50px', textAlign: 'center'
-          }}>
-            БАНЕРИ З ПОДІЯМИ
-          </h2>
-
-          <div style={{ display: 'flex', gap: '30px', width: '100%', flexWrap: 'wrap', justifyContent: 'center' }}>
-
-            <div className="banner-card" style={{
-              flex: '1', minWidth: '320px', height: '300px', background: '#ffffff',
-              borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.03)'
+        {/* ПРАВА КАРТИНКА - тепер використовуємо змінну heroIllustration */}
+        <div style={{
+          position: 'absolute',
+          right: '0',
+          top: '0',
+          bottom: '0',
+          width: '50%',
+          zIndex: 1,
+          pointerEvents: 'none'
+        }}>
+          <img
+            src={heroIllustration} // Змінна з імпорту замість рядка "/hero-image.png"
+            alt="Volunteer illustration"
+            style={{
+              width: '100%',
+              height: 'auto',
+              filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.15))'
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.08)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.03)'; }}
-            >
-              <div style={{ color: '#cbd5e1', textAlign: 'center' }}>
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                  <polyline points="21 15 16 10 5 21"></polyline>
-                </svg>
-                <p style={{ marginTop: '15px', fontSize: '15px', color: '#94a3b8', fontWeight: '500' }}>Місце для зображення</p>
-              </div>
-            </div>
-
-            <div className="banner-card" style={{
-              flex: '1', minWidth: '320px', height: '300px', background: '#ffffff',
-              borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.03)'
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.08)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.03)'; }}
-            >
-              <div style={{ color: '#cbd5e1', textAlign: 'center' }}>
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                  <polyline points="21 15 16 10 5 21"></polyline>
-                </svg>
-                <p style={{ marginTop: '15px', fontSize: '15px', color: '#94a3b8', fontWeight: '500' }}>Місце для зображення</p>
-              </div>
-            </div>
-
-          </div>
+          />
         </div>
       </section>
 
+        {/* БАНЕРИ З ПОДІЯМИ */}
+        <section className="section" style={{ background: '#f9f8f6', padding: '60px 0 80px' }}>
+          <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <h2 style={{
+              fontSize: '36px', fontWeight: '900', textTransform: 'uppercase',
+              color: '#2C3E50', marginBottom: '50px', textAlign: 'center'
+            }}>
+              БАНЕРИ З ПОДІЯМИ
+            </h2>
+
+            <div style={{ display: 'flex', gap: '30px', width: '100%', flexWrap: 'wrap', justifyContent: 'center' }}>
+              {[
+                {
+                  id: 1,
+                  image: "штурмова.jpg", // або імпортована змінна
+                  url: "https://google.com" // куди переходити
+                },
+                {
+                  id: 2,
+                  image: "посилання_на_картинку_2.jpg",
+                  url: "https://ab3.army/"
+                }
+              ].map((banner) => (
+                <a
+                  key={banner.id}
+                  href={banner.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="banner-card"
+                  style={{
+                    flex: '1',
+                    minWidth: '320px',
+                    height: '300px',
+                    background: '#ffffff',
+                    borderRadius: '12px',
+                    overflow: 'hidden', // щоб картинка не виходила за краї закруглення
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                   boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+                    textDecoration: 'none' // прибираємо підкреслення, якщо це посилання
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.02)';
+                    e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.08)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.03)';
+                  }}
+                >
+                  {banner.image ? (
+                    <img
+                      src={banner.image}
+                      alt={`Подія ${banner.id}`}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover' // картинка заповнить весь простір
+                      }}
+                    />
+                  ) : (
+                    /* Заглушка, якщо картинки немає */
+                    <div style={{ color: '#cbd5e1', textAlign: 'center' }}>
+                      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                      <p style={{ marginTop: '15px', fontSize: '15px', color: '#94a3b8', fontWeight: '500' }}>Місце для зображення</p>
+                    </div>
+                  )}
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
+
+      {/* ВІДГУКИ */}
       <section className="section" style={{ background: '#ffffff', padding: '80px 0', overflow: 'hidden' }}>
         <div className="container">
           <h2 style={{ textAlign: 'center', color: '#2C3E50', marginBottom: '15px', fontSize: '32px' }}>
@@ -150,6 +199,7 @@ export default function Home() {
             </div>
           </div>
 
+          {/* НАВІГАЦІЯ СЛАЙДЕРА */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1010px', margin: '30px auto 0' }}>
             <div style={{ display: 'flex', gap: '10px' }}>
               {reviews.map((_, index) => (
