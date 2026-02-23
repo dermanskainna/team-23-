@@ -94,12 +94,12 @@ export default function Home() {
                 {
                   id: 1,
                   image: "штурмова.jpg", // або імпортована змінна
-                  url: "https://google.com" // куди переходити
+                  url: "https://ab3.army/" // куди переходити
                 },
                 {
                   id: 2,
-                  image: "посилання_на_картинку_2.jpg",
-                  url: "https://ab3.army/"
+                  image: "бригада.png",
+                  url: "https://80dshv.mil.gov.ua/"
                 }
               ].map((banner) => (
                 <a
