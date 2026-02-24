@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'logistics',
     "channels",
     "chat",
+    "ads"
 ]
 
 MIDDLEWARE = [
