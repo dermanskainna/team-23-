@@ -1,188 +1,219 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+
+const API_URL = 'http://127.0.0.1:8000/api/logistics/warehouse/';
 
 export default function Warehouse() {
-  const navigate = useNavigate();
-
   const [inventory, setInventory] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const [newItem, setNewItem] = useState({
-    name: '',
-    category: 'other',
-    quantity: 0
-  });
-  const [isAdding, setIsAdding] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('Всі');
 
-  useEffect(() => {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
-    if (!savedUser || !savedUser.token || savedUser.role !== 'volunteer') {
-      navigate('/login');
-      return;
-    }
-    fetchInventory(savedUser.token);
-  }, [navigate]);
+  // quantity як рядок, щоб можна було стерти поле (і не “прилипав” 0)
+  const [newItem, setNewItem] = useState({ name: '', category: '', quantity: '' });
 
-  const fetchInventory = async (token) => {
+  // Якщо у вас auth через токен — дістань його звідси (підлаштуй під ваш проєкт)
+  const token = localStorage.getItem('token');
+
+  const fetchWarehouse = async () => {
+    setError('');
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/logistics/warehouse/', {
+      setLoading(true);
+
+      const res = await fetch(API_URL, {
+        method: 'GET',
         headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
       });
-      if (response.ok) {
-        const data = await response.json();
-        setInventory(data);
-      } else {
-        setError('Не вдалося завантажити склад');
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`GET warehouse failed (${res.status}): ${text}`);
       }
-    } catch (err) {
-      console.error(err);
-      setError('Помилка мережі при завантаженні складу');
+
+      const data = await res.json();
+      setInventory(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setError(e.message || 'Помилка завантаження складу');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchWarehouse();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleAddItem = async (e) => {
     e.preventDefault();
-    const savedUser = JSON.parse(localStorage.getItem("user"));
-    setIsAdding(true);
 
+    const name = newItem.name.trim();
+    const category = newItem.category;
+    const qty = Number(newItem.quantity);
+
+    if (!name || !category) return;
+    if (!Number.isFinite(qty) || qty <= 0) return;
+
+    setError('');
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/logistics/warehouse/', {
+      const res = await fetch(API_URL, {
         method: 'POST',
         headers: {
-          'Authorization': `Token ${savedUser.token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(newItem)
+        body: JSON.stringify({
+          name,
+          category,
+          quantity: qty,
+        }),
       });
 
-      if (response.ok) {
-        const addedItem = await response.json();
-        setInventory([...inventory, addedItem]);
-        setNewItem({ name: '', category: 'other', quantity: 0 });
-      } else {
-        const errorData = await response.json();
-        alert("Django каже: " + JSON.stringify(errorData));
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`POST warehouse failed (${res.status}): ${text}`);
       }
-    } catch (err) {
-      console.error(err);
-      alert("Помилка мережі");
-    } finally {
-      setIsAdding(false);
+
+      // Важливо: після POST робимо GET, щоб UI точно відобразив merge з бекенду
+      await fetchWarehouse();
+
+      setNewItem({ name: '', category: '', quantity: '' });
+      setShowForm(false);
+    } catch (e) {
+      setError(e.message || 'Помилка додавання на склад');
     }
   };
 
-  const getCategoryColor = (category) => {
-    switch(category) {
-      case 'medicine': return '#ef4444';
-      case 'drones': return '#3b82f6';
-      case 'ammunition': return '#10b981';
-      case 'vehicles': return '#f59e0b';
-      default: return '#6b7280';
-    }
-  };
+  const categories = useMemo(
+    () => ['Всі', ...new Set(inventory.map((item) => item.category))],
+    [inventory]
+  );
+
+  const filteredInventory = useMemo(() => {
+    return activeCategory === 'Всі'
+      ? inventory
+      : inventory.filter((item) => item.category === activeCategory);
+  }, [activeCategory, inventory]);
 
   return (
-    <section className="section" style={{ background: '#f9f8f6', minHeight: '80vh', padding: '40px 0' }}>
+    <section className="section">
       <div className="container">
-        <h2 style={{ marginBottom: "20px", color: "#2C3E50" }}>Склад ресурсів</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h2>Склад ресурсів</h2>
 
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <button className="btn btn-primary" onClick={() => setShowForm((s) => !s)}>
+            {showForm ? 'Скасувати' : '+ Додати партію'}
+          </button>
+        </div>
 
-          <div className="card" style={{ flex: '2', minWidth: '300px', padding: '20px' }}>
-            <h3 style={{ marginTop: 0, borderBottom: '1px solid #eee', paddingBottom: '15px' }}>Наявні ресурси</h3>
-
-            {isLoading ? (
-              <p style={{ textAlign: 'center', color: '#888' }}>Завантаження складу...</p>
-            ) : error ? (
-              <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>
-            ) : inventory.length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#888', padding: '20px' }}>Склад наразі порожній.</p>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px' }}>
-                  <thead>
-                    <tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
-                      <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Назва</th>
-                      <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Категорія</th>
-                      <th style={{ padding: '12px', borderBottom: '2px solid #ddd', textAlign: 'center' }}>Кількість</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {inventory.map(item => (
-                      <tr key={item.id} style={{ borderBottom: '1px solid #eee' }}>
-                        <td style={{ padding: '12px', fontWeight: 'bold', color: '#2C3E50' }}>{item.name}</td>
-                        <td style={{ padding: '12px' }}>
-                          <span style={{
-                            background: getCategoryColor(item.category) + '20',
-                            color: getCategoryColor(item.category),
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            fontWeight: 'bold'
-                          }}>
-                            {item.category_display || item.category}
-                          </span>
-                        </td>
-                        <td style={{ padding: '12px', textAlign: 'center', fontSize: '16px', fontWeight: 'bold' }}>
-                          {item.quantity} шт.
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+        {error && (
+          <div className="card" style={{ marginBottom: 20, borderLeft: '4px solid #d33' }}>
+            <b>Помилка:</b> {error}
           </div>
+        )}
 
-          <div className="card" style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#fff' }}>
-            <h3 style={{ marginTop: 0, borderBottom: '1px solid #eee', paddingBottom: '15px' }}>+ Додати партію</h3>
+        {showForm && (
+          <div className="card" style={{ marginBottom: 30, background: '#eaf4f0' }}>
+            <h3>Нове надходження</h3>
 
-            <form onSubmit={handleAddItem} style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '15px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: 'bold', color: '#555' }}>Назва товару</label>
-                <input
-                  type="text" className="input" placeholder="Напр. Турнікети СІЧ" required
-                  value={newItem.name} onChange={(e) => setNewItem({...newItem, name: e.target.value})}
-                  style={{ marginBottom: 0 }}
-                />
-              </div>
+            <form onSubmit={handleAddItem} style={{ display: 'flex', gap: 15, alignItems: 'center', flexWrap: 'wrap' }}>
+              <input
+                className="input"
+                style={{ marginBottom: 0, flex: 1 }}
+                type="text"
+                placeholder="Назва товару"
+                value={newItem.name}
+                onChange={(e) => setNewItem((prev) => ({ ...prev, name: e.target.value }))}
+              />
 
-              <div>
-                <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: 'bold', color: '#555' }}>Категорія</label>
-                <select
-                  className="input"
-                  value={newItem.category} onChange={(e) => setNewItem({...newItem, category: e.target.value})}
-                  style={{ marginBottom: 0 }}
-                >
-                  <option value="medicine">Медицина</option>
-                  <option value="drones">Дрони та електроніка</option>
-                  <option value="ammunition">Амуніція</option>
-                  <option value="vehicles">Транспорт</option>
-                  <option value="other">Інше</option>
-                </select>
-              </div>
+              <select
+                className="input"
+                style={{ marginBottom: 0, width: 220 }}
+                value={newItem.category}
+                onChange={(e) => setNewItem((prev) => ({ ...prev, category: e.target.value }))}
+              >
+                <option value="" disabled>Оберіть категорію</option>
+                <option value="Електроніка">Електроніка</option>
+                <option value="Медицина">Медицина</option>
+                <option value="Амуніція">Амуніція</option>
+                <option value="Транспорт">Транспорт</option>
+                <option value="Їжа та Вода">Їжа та Вода</option>
+                <option value="Інше">Інше</option>
+              </select>
 
-              <div>
-                <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: 'bold', color: '#555' }}>Кількість (шт)</label>
-                <input
-                  type="number" className="input" min="1" required
-                  value={newItem.quantity} onChange={(e) => setNewItem({...newItem, quantity: parseInt(e.target.value) || 0})}
-                  style={{ marginBottom: 0 }}
-                />
-              </div>
+              {/* quantity як текст з inputMode numeric — щоб не залипав 0 і можна було чистити */}
+              <input
+                className="input"
+                style={{ marginBottom: 0, width: 160 }}
+                type="text"
+                inputMode="numeric"
+                placeholder="Кількість"
+                value={newItem.quantity}
+                onChange={(e) => {
+                  const raw = e.target.value;
 
-              <button type="submit" className="btn btn-primary" disabled={isAdding} style={{ padding: '10px' }}>
-                {isAdding ? 'Додавання...' : 'Зберегти на склад'}
+                  if (raw === '') {
+                    setNewItem((prev) => ({ ...prev, quantity: '' }));
+                    return;
+                  }
+
+                  const digits = raw.replace(/[^\d]/g, '');
+                  const noLeadingZeros = digits.replace(/^0+(?=\d)/, '');
+                  setNewItem((prev) => ({ ...prev, quantity: noLeadingZeros }));
+                }}
+              />
+
+              <button className="btn btn-accent" type="submit">
+                Зберегти на склад
               </button>
             </form>
           </div>
+        )}
 
+        <div className="tabs" style={{ marginBottom: 20 }}>
+          {categories.map((cat, index) => (
+            <button
+              key={index}
+              className={`tab-btn ${activeCategory === cat ? 'active' : ''}`}
+              onClick={() => setActiveCategory(cat)}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        <div className="card">
+          {loading ? (
+            <p>Завантаження...</p>
+          ) : filteredInventory.length === 0 ? (
+            <p>У цій категорії немає товарів.</p>
+          ) : (
+            <div style={{ width: '100%' }}>
+              <div style={{ display: 'flex', fontWeight: 'bold', borderBottom: '2px solid #ddd', paddingBottom: 10, marginBottom: 10 }}>
+                <div style={{ flex: 2 }}>Назва</div>
+                <div style={{ flex: 1 }}>Категорія</div>
+                <div style={{ flex: 1, textAlign: 'center' }}>Залишок</div>
+              </div>
+
+              {filteredInventory.map((item) => (
+                <div key={item.id} style={{ display: 'flex', padding: '10px 0', borderBottom: '1px solid #eee' }}>
+                  <div style={{ flex: 2 }}>{item.name}</div>
+                  <div style={{ flex: 1 }}>
+                    <span className="status-badge volunteer" style={{ background: '#78B27C' }}>
+                      {item.category}
+                    </span>
+                  </div>
+                  <div style={{ flex: 1, textAlign: 'center', fontWeight: 'bold' }}>
+                    {item.quantity} шт.
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>
