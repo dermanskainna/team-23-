@@ -98,8 +98,27 @@ def warehouse_list_create(request):
     elif request.method == 'POST':
         serializer = WarehouseItemSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            name = serializer.validated_data['name'].strip()
+            category = serializer.validated_data['category']
+            qty = serializer.validated_data.get('quantity', 0)
+
+            existing = WarehouseItem.objects.filter(name=name, category=category).first()
+
+            if existing:
+                existing.quantity = existing.quantity + qty
+                existing.save(update_fields=['quantity'])
+
+                return Response(
+                    WarehouseItemSerializer(existing).data,
+                    status=status.HTTP_200_OK
+                )
+
+            created = serializer.save()
+            return Response(
+                WarehouseItemSerializer(created).data,
+                status=status.HTTP_201_CREATED
+            )
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
