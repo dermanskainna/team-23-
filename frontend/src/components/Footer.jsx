@@ -54,6 +54,14 @@ export default function Footer() {
     partnership: {
       title: "Партнерство",
       content: "Ми запрошуємо логістичні компанії, великі фонди та виробників амуніції до співпраці. Надаємо API для інтеграції та зручну панель аналітики для ефективного розподілу ресурсів."
+    },
+    privacy: {
+      title: "Політика конфіденційності",
+      content: "Наша платформа не передає дані третім особам. Усі запити обробляються виключно для благодійної допомоги військовим. Ми зберігаємо інформацію безпечно та використовуємо її лише для внутрішніх процесів. Всі дані захищені відповідно до сучасних стандартів безпеки."
+    },
+    terms: {
+      title: "Умови використання",
+      content: "Платформа надається виключно для благодійних цілей та взаємодії волонтерів і військових. Користувачі зобов'язуються дотримуватися правил безпеки та не розповсюджувати персональні дані. Використання сервісу означає прийняття цих умов."
     }
   };
 
@@ -74,8 +82,34 @@ export default function Footer() {
             Наша місія — забезпечити зручну взаємодію між волонтерами та військовими для наближення перемоги.
           </p>
           <div style={{ display: 'flex', gap: '15px' }}>
-            {['f', 't', 'in'].map(social => (
-              <span key={social} style={{ width: '36px', height: '36px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: '0.3s' }}>{social}</span>
+            {[
+              { name: 'Facebook', url: 'https://facebook.com' },
+              { name: 'Twitter', url: 'https://twitter.com' },
+              { name: 'LinkedIn', url: 'https://linkedin.com' }
+            ].map(social => (
+              <a
+                key={social.name}
+                href={social.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  background: 'rgba(255,255,255,0.1)',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: '0.3s',
+                  textDecoration: 'none',
+                  color: '#fff',
+                  fontWeight: '700',
+                  fontSize: '14px'
+                }}
+              >
+                {social.name[0]}
+              </a>
             ))}
           </div>
         </div>
@@ -114,9 +148,9 @@ export default function Footer() {
       {/* Нижня частина */}
       <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '25px 20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: '13px', color: 'rgba(224, 224, 224, 0.7)', flexWrap: 'wrap', gap: '15px' }}>
         <p style={{ margin: 0, color: '#F4A261', fontWeight: '500' }}>©2026 DreamTeam. Всі права захищено.</p>
-        <div style={{ display: 'flex', gap: '25px' }}>
-          <span style={{ cursor: 'pointer' }}>Політика конфіденційності</span>
-          <span style={{ cursor: 'pointer' }}>Умови використання</span>
+        <div style={{ display: 'flex', gap: '25px', flexWrap: 'wrap' }}>
+          <button onClick={() => openModal('privacy')} style={{ cursor: 'pointer', border: 'none', background: 'none', color: 'rgba(224, 224, 224, 0.7)', fontSize: '13px', padding: 0 }}>Політика конфіденційності</button>
+          <button onClick={() => openModal('terms')} style={{ cursor: 'pointer', border: 'none', background: 'none', color: 'rgba(224, 224, 224, 0.7)', fontSize: '13px', padding: 0 }}>Умови використання</button>
         </div>
       </div>
 

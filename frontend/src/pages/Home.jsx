@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import heroIllustration from '../assets/hero-image.png';
+import { FaHandsHelping, FaTruck, FaShieldAlt } from 'react-icons/fa';
 
 export default function Home() {
   const [userRole, setUserRole] = useState(null);
@@ -158,6 +159,47 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+
+      {/* --- НОВИЙ БЛОК: Як це працює --- */}
+      <section className="section" style={{ padding: '80px 0', background: '#ffffff' }}>
+        <div className="container" style={{ maxWidth: '1010px', margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#2C3E50', marginBottom: '40px' }}>Як це працює</h2>
+          <div style={{ display: 'flex', gap: '30px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {[
+              { id: 1, icon: <FaHandsHelping size={36} color="#F4A261" />, title: "Подача запиту", text: "Військовий залишає заявку на необхідну допомогу." },
+              { id: 2, icon: <FaTruck size={36} color="#F4A261" />, title: "Логістика", text: "Волонтери організовують доставку швидко та безпечно." },
+              { id: 3, icon: <FaShieldAlt size={36} color="#F4A261" />, title: "Контроль", text: "Кожен крок можна відстежити у реальному часі." }
+            ].map(card => (
+              <div key={card.id} style={{
+                background: '#f9f8f6', borderRadius: '12px', padding: '40px 30px', width: '260px',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', textAlign: 'center',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.03)'
+              }}>
+                {card.icon}
+                <h4 style={{ fontSize: '18px', color: '#334155', margin: '0' }}>{card.title}</h4>
+                <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>{card.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* --- НОВИЙ БЛОК: В цифрах --- */}
+      <section className="section" style={{ background: '#F4A261', padding: '60px 0', color: '#fff' }}>
+        <div className="container" style={{ display: 'flex', gap: '50px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          {[
+            { id: 1, value: "1000+", label: "Оброблених запитів" },
+            { id: 2, value: "50+", label: "Волонтерських фондів" },
+            { id: 3, value: "24/7", label: "Підтримка" }
+          ].map(stat => (
+            <div key={stat.id} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '36px', fontWeight: '700' }}>{stat.value}</div>
+              <div style={{ fontSize: '16px', marginTop: '5px' }}>{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* ВІДГУКИ */}
       <section className="section" style={{ background: '#ffffff', padding: '80px 0', overflow: 'hidden' }}>
