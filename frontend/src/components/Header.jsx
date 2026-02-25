@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import NotificationsBell from './NotificationsBell';
 
 const Logo = () => (
   <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', textDecoration: 'none' }}>
@@ -94,6 +95,8 @@ export default function Header() {
               <Link to="/profile" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>Профіль</Link>
             </>
           )}
+
+          {userRole && <NotificationsBell />}
 
           <button
             onClick={() => setIsLiteMode(!isLiteMode)}
