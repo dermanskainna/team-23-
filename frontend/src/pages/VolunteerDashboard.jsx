@@ -96,7 +96,6 @@ export default function VolunteerDashboard() {
         throw new Error(`PATCH status failed (${response.status}): ${text}`);
       }
 
-      // Найнадійніше — просто перезавантажити список з сервера
       await fetchRequests();
     } catch (e) {
       setError(e?.message || "Помилка зміни статусу");
@@ -114,19 +113,28 @@ export default function VolunteerDashboard() {
   }, [requests, filter]);
 
   const getStatusBadge = (status) => {
+    const styleBase = {
+      padding: "6px 12px",
+      borderRadius: 8,
+      color: "white",
+      fontSize: 13,
+      whiteSpace: "nowrap",
+      display: "inline-block",
+    };
+
     switch (status) {
       case "new":
-        return <span className="status-badge" style={{ background: "#3498db" }}>Новий</span>;
+        return <span style={{ ...styleBase, background: "#3498db" }}>Новий</span>;
       case "awaiting_purchase":
-        return <span className="status-badge" style={{ background: "#a855f7" }}>Очікує закупівлі</span>;
+        return <span style={{ ...styleBase, background: "#a855f7" }}>Очікує закупівлі</span>;
       case "in_progress":
-        return <span className="status-badge" style={{ background: "#F4A261" }}>В роботі</span>;
+        return <span style={{ ...styleBase, background: "#F4A261", color: "white" }}>В роботі</span>;
       case "completed":
-        return <span className="status-badge" style={{ background: "#2ecc71" }}>Виконано</span>;
+        return <span style={{ ...styleBase, background: "#2ecc71" }}>Виконано</span>;
       case "rejected":
-        return <span className="status-badge" style={{ background: "#e74c3c" }}>Відхилено</span>;
+        return <span style={{ ...styleBase, background: "#e74c3c" }}>Відхилено</span>;
       default:
-        return <span className="status-badge" style={{ background: "#94a3b8" }}>{status || "—"}</span>;
+        return <span style={{ ...styleBase, background: "#94a3b8" }}>{status || "—"}</span>;
     }
   };
 
@@ -192,14 +200,8 @@ export default function VolunteerDashboard() {
                 </div>
 
                 {filteredRequests.map((req) => (
-                  <div
-                    key={req.id}
-                    style={{ display: "flex", alignItems: "center", padding: "15px 0", borderBottom: "1px solid #eee" }}
-                  >
-                    <div style={{ flex: 1, fontSize: 14, color: "#555" }}>
-                      {req.date || (req.created_at ? String(req.created_at).slice(0, 10) : "—")}
-                    </div>
-
+                  <div key={req.id} style={{ display: "flex", alignItems: "center", padding: "15px 0", borderBottom: "1px solid #eee" }}>
+                    <div style={{ flex: 1, fontSize: 14, color: "#555" }}>{req.date || (req.created_at ? String(req.created_at).slice(0, 10) : "—")}</div>
                     <div style={{ flex: 2, fontWeight: 500 }}>
                       <span style={{ color: "#888", marginRight: 8, fontSize: 13 }}>#{req.id}</span>
                       {req.title}
@@ -209,61 +211,51 @@ export default function VolunteerDashboard() {
                         </div>
                       )}
                     </div>
-
                     <div style={{ flex: 2 }}>
                       {req.author?.username || req.author?.full_name || "—"}
                       <br />
                       <span style={{ fontSize: 12, color: "#888" }}>📍 {req.location || "—"}</span>
                     </div>
-
                     <div style={{ flex: 1 }}>{getStatusBadge(req.status)}</div>
-
                     <div style={{ flex: 1, textAlign: "center" }}>
-                      <span className={`urgency-badge ${req.urgency || "medium"}`}>
-                        {getUrgencyLabel(req.urgency || "medium")}
-                      </span>
+                      <span className={`urgency-badge ${req.urgency || "medium"}`}>{getUrgencyLabel(req.urgency || "medium")}</span>
                     </div>
-
                     <div style={{ flex: 3, textAlign: "right", display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+
+                      {req.attachment && (
+                        <a
+                          href={req.attachment}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: "inline-block",
+                            padding: "6px 12px",
+                            background: "#3498db",
+                            color: "white",
+                            borderRadius: 8,  // те саме заокруглення
+                            textDecoration: "none",
+                            fontSize: 13,
+                            marginRight: 8,
+                          }}
+                        >
+                          Завантажити скан
+                        </a>
+                      )}
+
                       {(req.status === "new" || req.status === "awaiting_purchase") && (
                         <>
-                          <button
-                            className="btn btn-primary"
-                            style={{ padding: "6px 12px", fontSize: 13 }}
-                            onClick={() => patchStatus(req.id, "in_progress")}
-                          >
-                            Взяти в роботу
-                          </button>
-
-                          <button
-                            className="btn"
-                            style={{ padding: "6px 12px", fontSize: 13, background: "#fee2e2", color: "#e74c3c", border: "none" }}
-                            onClick={() => openRejectModal(req.id)}
-                          >
-                            Відхилити
-                          </button>
+                          <button className="btn btn-primary" style={{ padding: "6px 12px", fontSize: 13 }} onClick={() => patchStatus(req.id, "in_progress")}>Взяти в роботу</button>
+                          <button className="btn" style={{ padding: "6px 12px", fontSize: 13, background: "#fee2e2", color: "#e74c3c", border: "none" }} onClick={() => openRejectModal(req.id)}>Відхилити</button>
                         </>
                       )}
 
                       {req.status === "in_progress" && (
                         <>
-                          <button
-                            className="btn"
-                            style={{ background: "#2ecc71", color: "white", padding: "6px 12px", fontSize: 13 }}
-                            onClick={() => patchStatus(req.id, "completed")}
-                          >
-                            Завершити
-                          </button>
-
-                          <button
-                            className="btn"
-                            style={{ background: "#e74c3c", color: "white", padding: "6px 12px", fontSize: 13 }}
-                            onClick={() => openRejectModal(req.id)}
-                          >
-                            Відхилити
-                          </button>
+                          <button className="btn" style={{ background: "#2ecc71", color: "white", padding: "6px 12px", fontSize: 13 }} onClick={() => patchStatus(req.id, "completed")}>Завершити</button>
+                          <button className="btn" style={{ background: "#e74c3c", color: "white", padding: "6px 12px", fontSize: 13 }} onClick={() => openRejectModal(req.id)}>Відхилити</button>
                         </>
                       )}
+
                     </div>
                   </div>
                 ))}

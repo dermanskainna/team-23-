@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+import os
+
 
 class Request(models.Model):
     STATUS_CHOICES = (
@@ -32,10 +34,25 @@ class Request(models.Model):
 
     reject_reason = models.TextField(blank=True, null=True, verbose_name="Причина відхилення")
 
+    attachment = models.FileField(
+        upload_to='%Y/%m/',
+        blank=True,
+        null=True,
+        verbose_name="Скан від військової частини"
+    )
+
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
 
     def __str__(self):
         return f"#{self.id} {self.title} ({self.get_status_display()})"
+
+    def save(self, *args, **kwargs):
+        if self.attachment:
+            upload_path = os.path.join(settings.MEDIA_ROOT, os.path.dirname(self.attachment.name))
+            os.makedirs(upload_path, exist_ok=True)
+        super().save(*args, **kwargs)
+
 
 class WarehouseItem(models.Model):
     CATEGORY_CHOICES = (
@@ -49,7 +66,6 @@ class WarehouseItem(models.Model):
     name = models.CharField(max_length=200, verbose_name="Назва товару (напр. Mavic 3T)")
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other', verbose_name="Категорія")
     quantity = models.IntegerField(default=0, verbose_name="Кількість на складі")
-
     last_updated = models.DateTimeField(auto_now=True, verbose_name="Останнє оновлення")
 
     def __str__(self):
