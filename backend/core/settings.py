@@ -156,5 +156,5 @@ CHANNEL_LAYERS = {
 ASGI_APPLICATION = "core.asgi.application"
 
 ASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MEDIA_ROOT = os.path.join(BASE_DIR, 'attachments')
 MEDIA_URL = '/attachments/'
-MEDIA_ROOT = os.path.join(BASE_DIR)

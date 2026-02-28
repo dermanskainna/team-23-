@@ -14,7 +14,7 @@ class RequestSerializer(serializers.ModelSerializer):
             'author_name', 'author_organization',
             'feedback', 'attachment', 'attachment_url'
         ]
-        read_only_fields = ['id', 'status', 'reject_reason', 'created_at']
+        read_only_fields = ['id', 'status', 'reject_reason', 'created_at', 'feedback']
 
     def get_attachment_url(self, obj):
         request = self.context.get('request')
