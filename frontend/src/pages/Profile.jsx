@@ -1,5 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+
+const UA_PREFIX = "+380";
+
+const normalizeUaPhone = (input) => {
+  let s = String(input ?? "").replace(/[^\d+]/g, "");
+  const digits = s.replace(/\D/g, "");
+  let rest = digits;
+
+  if (rest.startsWith("380")) rest = rest.slice(3);
+  rest = rest.slice(0, 9);
+
+  return UA_PREFIX + rest;
+};
+
+const isUaPhoneComplete = (phone) => /^\+380\d{9}$/.test(phone);
+
+const isFullNameCapitalized = (fullName) => {
+  const trimmed = String(fullName ?? "").trim();
+  if (!trimmed) return false;
+
+  const parts = trimmed.split(/\s+/);
+  return parts.every(p => {
+    if (!p) return true;
+    const first = p[0];
+    return first === first.toUpperCase() && first !== first.toLowerCase();
+  });
+};
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -12,7 +39,7 @@ export default function Profile() {
 
   const [formData, setFormData] = useState({
     full_name: '',
-    phone: '',
+    phone: UA_PREFIX,
     organization: ''
   });
 
@@ -24,9 +51,10 @@ export default function Profile() {
     }
 
     setUser(savedUser);
+
     setFormData({
       full_name: savedUser.full_name || '',
-      phone: savedUser.phone || '',
+      phone: normalizeUaPhone(savedUser.phone || UA_PREFIX),
       organization: savedUser.organization || ''
     });
 
@@ -100,6 +128,34 @@ export default function Profile() {
     navigate('/create-request', { state: { repeatedData: req } });
   };
 
+  const errors = useMemo(() => {
+    const e = {};
+    if (!isFullNameCapitalized(formData.full_name)) {
+      e.full_name = "ПІБ має починатися з великої літери (кожне слово).";
+    }
+    if (!isUaPhoneComplete(formData.phone)) {
+      e.phone = "Телефон введено не повністю. Формат: +380XXXXXXXXX";
+    }
+    return e;
+  }, [formData.full_name, formData.phone]);
+
+  const isFormValid = Object.keys(errors).length === 0;
+
+  const handleSave = () => {
+    if (!isFormValid) return;
+
+    const updatedUser = {
+      ...user,
+      full_name: formData.full_name,
+      phone: formData.phone,
+      organization: formData.organization,
+    };
+
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    setUser(updatedUser);
+    alert("Зміни збережено (локально).");
+  };
+
   if (!user) return null;
 
   return (
@@ -110,7 +166,7 @@ export default function Profile() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
               <div style={{ width: '60px', height: '60px', background: '#3A5A40', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 'bold' }}>
-                {user.username.charAt(0).toUpperCase()}
+                {user.username?.charAt(0)?.toUpperCase()}
               </div>
               <div>
                 <h2 style={{ margin: 0, color: '#2C3E50' }}>{user.full_name || user.username}</h2>
@@ -119,6 +175,7 @@ export default function Profile() {
                 </p>
               </div>
             </div>
+
             <button onClick={handleLogout} className="btn" style={{ background: '#e74c3c', color: 'white', border: 'none', padding: '10px 20px' }}>
               Вийти
             </button>
@@ -142,6 +199,7 @@ export default function Profile() {
                 Взяті в роботу
               </button>
             )}
+
             <button
               className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
               onClick={() => setActiveTab('settings')}
@@ -203,27 +261,92 @@ export default function Profile() {
 
           {activeTab === 'accepted' && user.role === 'volunteer' && (
             <div>
-               <h3 style={{ margin: '0 0 20px 0' }}>Заявки в роботі</h3>
-               <p style={{ color: '#888' }}>Тут будуть заявки, які ви взяли в роботу на Дашборді.</p>
+              <h3 style={{ margin: '0 0 20px 0' }}>Заявки в роботі</h3>
+              <p style={{ color: '#888' }}>Тут будуть заявки, які ви взяли в роботу на Дашборді.</p>
             </div>
           )}
 
           {activeTab === 'settings' && (
             <div style={{ maxWidth: '400px' }}>
               <form style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>Email</label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={user.email || ''}
+                    disabled
+                    style={{ background: '#f0f0f0', cursor: 'not-allowed', opacity: 0.8 }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>Логін</label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={user.username || ''}
+                    disabled
+                    style={{ background: '#f0f0f0', cursor: 'not-allowed', opacity: 0.8 }}
+                  />
+                </div>
+
                 <div>
                   <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>ПІБ</label>
-                  <input type="text" className="input" value={formData.full_name} onChange={(e) => setFormData({...formData, full_name: e.target.value})} />
+                  <input
+                    type="text"
+                    className="input"
+                    value={formData.full_name}
+                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                  />
+                  {errors.full_name && (
+                    <p style={{ margin: '6px 0 0 0', color: '#e74c3c', fontSize: '12px' }}>
+                      {errors.full_name}
+                    </p>
+                  )}
                 </div>
+
                 <div>
                   <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>Телефон</label>
-                  <input type="text" className="input" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
+                  <input
+                    type="text"
+                    className="input"
+                    value={formData.phone}
+                    onChange={(e) => {
+                      const value = normalizeUaPhone(e.target.value);
+                      setFormData({ ...formData, phone: value });
+                    }}
+                  />
+                  {errors.phone && (
+                    <p style={{ margin: '6px 0 0 0', color: '#e74c3c', fontSize: '12px' }}>
+                      {errors.phone}
+                    </p>
+                  )}
                 </div>
+
                 <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>{user.role === 'military' ? 'Підрозділ' : 'Волонтерський фонд'}</label>
-                  <input type="text" className="input" value={formData.organization} onChange={(e) => setFormData({...formData, organization: e.target.value})} />
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+                    {user.role === 'military' ? 'Підрозділ' : 'Волонтерський фонд'}
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={formData.organization}
+                    onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
+                  />
                 </div>
-                <button type="button" className="btn btn-primary" onClick={() => alert("Оновлення профілю буде підключено згодом!")}>Зберегти зміни</button>
+
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={!isFormValid}
+                  onClick={handleSave}
+                  style={!isFormValid ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
+                >
+                  Зберегти зміни
+                </button>
+
               </form>
             </div>
           )}
