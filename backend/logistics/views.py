@@ -13,6 +13,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Request, WarehouseItem, Feedback
 from .serializers import RequestSerializer, WarehouseItemSerializer, TrackingSerializer, FeedbackSerializer
+from django.http import FileResponse
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
@@ -301,3 +302,27 @@ def request_feedback_view(request, pk: int):
     ser.is_valid(raise_exception=True)
     ser.save()
     return Response(FeedbackSerializer(feedback).data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def download_attachment(request, pk):
+    try:
+        req = Request.objects.get(pk=pk)
+    except Request.DoesNotExist:
+        return Response({"error": "Запит не знайдено."}, status=404)
+
+    if not req.attachment:
+        return Response({"error": "Файл не прикріплено."}, status=404)
+
+    if request.user.role not in ['volunteer', 'military'] or (request.user.role == 'military' and request.user != req.author):
+        return Response({"error": "Доступ заборонено."}, status=403)
+
+    file_path = req.attachment.path
+    if not os.path.exists(file_path):
+        return Response({"error": "Файл не знайдено на сервері."}, status=404)
+
+    return FileResponse(
+        open(file_path, 'rb'),
+        as_attachment=True,
+        filename=os.path.basename(file_path)
+    )

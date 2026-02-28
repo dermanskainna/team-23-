@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 const API_BASE = "http://127.0.0.1:8000";
 const REQUESTS_URL = `${API_BASE}/api/logistics/requests/`;
 const UPDATE_STATUS_URL = (id) => `${API_BASE}/api/logistics/requests/${id}/status/`;
+const REPORT_URL = `${API_BASE}/api/logistics/report/pdf/`;
 
 export default function VolunteerDashboard() {
   const navigate = useNavigate();
@@ -102,6 +103,44 @@ export default function VolunteerDashboard() {
     }
   };
 
+  const downloadMonthlyReport = async () => {
+    const token = getToken();
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    setError("");
+
+    try {
+      const response = await fetch(REPORT_URL, {
+        method: "GET",
+        headers: {
+          Authorization: `Token ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Report download failed (${response.status}): ${text}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "zvit_volontera.pdf";
+      document.body.appendChild(a);
+      a.click();
+
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e?.message || "Помилка завантаження звіту");
+    }
+  };
+
   useEffect(() => {
     fetchRequests();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -168,13 +207,21 @@ export default function VolunteerDashboard() {
         <p>Управління запитами від підрозділів</p>
 
         <div className="tabs" style={{ marginBottom: 20, marginTop: 20 }}>
+
           <button className={`tab-btn ${filter === "all" ? "active" : ""}`} onClick={() => setFilter("all")}>Всі</button>
           <button className={`tab-btn ${filter === "new" ? "active" : ""}`} onClick={() => setFilter("new")}>Нові</button>
           <button className={`tab-btn ${filter === "awaiting_purchase" ? "active" : ""}`} onClick={() => setFilter("awaiting_purchase")}>Очікує закупівлі</button>
           <button className={`tab-btn ${filter === "in_progress" ? "active" : ""}`} onClick={() => setFilter("in_progress")}>В роботі</button>
           <button className={`tab-btn ${filter === "completed" ? "active" : ""}`} onClick={() => setFilter("completed")}>Виконані</button>
           <button className={`tab-btn ${filter === "rejected" ? "active" : ""}`} onClick={() => setFilter("rejected")}>Відхилені</button>
-        </div>
+          <button
+            className="tab-btn"
+            onClick={downloadMonthlyReport}
+            style={{ backgroundColor: "#FFD700", marginLeft: "auto" }}
+          >
+            Завантажити звіт
+          </button>
+                </div>
 
         {error && (
           <div className="card" style={{ marginBottom: 20, borderLeft: "4px solid #d33" }}>

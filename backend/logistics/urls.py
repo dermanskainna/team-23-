@@ -9,4 +9,5 @@ urlpatterns = [
     path('tracking/<int:pk>/', views.track_request_status, name='tracking'),
     path('requests/<int:pk>/pdf/', views.generate_waybill_pdf, name='generate-pdf'),
     path('report/pdf/', views.generate_monthly_report_pdf, name='generate-report'),
+    path('requests/<int:pk>/download/', views.download_attachment, name='download-attachment'),
 ]
