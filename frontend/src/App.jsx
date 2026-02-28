@@ -14,6 +14,8 @@ import Warehouse from './pages/Warehouse';
 import VolunteerDashboard from './pages/VolunteerDashboard';
 import Tracking from './pages/Tracking';
 import Footer from './components/Footer';
+import Suppliers from './pages/Suppliers';
+import Offers from './pages/Offers';
 
 export default function App() {
   return (
@@ -33,6 +35,8 @@ export default function App() {
             <Route path="/warehouse" element={<Warehouse />} />
             <Route path="/dashboard" element={<VolunteerDashboard />} />
             <Route path="/tracking" element={<Tracking />} />
+            <Route path="/suppliers" element={<Suppliers />} />
+            <Route path="/offers" element={<Offers />} />
           </Routes>
         </main>
 
