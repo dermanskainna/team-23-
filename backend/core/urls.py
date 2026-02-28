@@ -24,12 +24,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/users/', include('users.urls')),
     path('api/logistics/', include('logistics.urls')),
-]
-
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/users/', include('users.urls')),
-    path('api/logistics/', include('logistics.urls')),
+    path('api/', include('suppliers.urls')),
 ]
 
 if settings.DEBUG:
