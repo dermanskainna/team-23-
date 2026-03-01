@@ -1,4 +1,3 @@
-# pylint: disable=no-member
 from rest_framework import generics, permissions
 from .models import Conversation, Message
 from .serializers import MessageSerializer
@@ -15,8 +14,10 @@ class ConversationMessagesView(generics.ListAPIView):
         if not conversation:
             return Message.objects.none()
 
-        # Перевірка, що user учасник чату
         if user != conversation.volunteer and user != conversation.military:
+            return Message.objects.none()
+
+        if conversation.request.status != "accepted":
             return Message.objects.none()
 
         return Message.objects.filter(conversation=conversation)

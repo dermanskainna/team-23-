@@ -9,6 +9,11 @@ class MessageSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class ConversationSerializer(serializers.ModelSerializer):
+    can_chat = serializers.SerializerMethodField()
+
     class Meta:
         model = Conversation
         fields = "__all__"
+
+    def get_can_chat(self, obj):
+        return obj.request.status == "accepted"

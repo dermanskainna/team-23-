@@ -317,12 +317,12 @@ def download_attachment(request, pk):
     if request.user.role not in ['volunteer', 'military'] or (request.user.role == 'military' and request.user != req.author):
         return Response({"error": "Доступ заборонено."}, status=403)
 
-    file_path = req.attachment.path
+    file_path = os.path.join(settings.MEDIA_ROOT, req.attachment.name)
     if not os.path.exists(file_path):
         return Response({"error": "Файл не знайдено на сервері."}, status=404)
 
     return FileResponse(
         open(file_path, 'rb'),
         as_attachment=True,
-        filename=os.path.basename(file_path)
+        filename=os.path.basename(req.attachment.name)
     )
