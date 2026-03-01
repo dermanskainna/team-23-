@@ -270,24 +270,45 @@ export default function VolunteerDashboard() {
                     <div style={{ flex: 3, textAlign: "right", display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
 
                       {req.attachment && (
-                        <a
-                          href={req.attachment}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            display: "inline-block",
-                            padding: "6px 12px",
-                            background: "#3498db",
-                            color: "white",
-                            borderRadius: 8,  // те саме заокруглення
-                            textDecoration: "none",
-                            fontSize: 13,
-                            marginRight: 8,
-                          }}
-                        >
-                          Завантажити скан
-                        </a>
-                      )}
+                      <button
+                        onClick={async () => {
+                          const token = localStorage.getItem("access"); // або звідки у тебе токен
+                          const response = await fetch(`/api/requests/${req.id}/download/`, {
+                            headers: {
+                              'Authorization': `Bearer ${token}`
+                            }
+                          });
+
+                          if (!response.ok) {
+                            alert("Помилка завантаження файлу");
+                            return;
+                          }
+
+                          const blob = await response.blob();
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = url;
+                          a.download = req.attachment.name; // або як хочеш назвати
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
+                          window.URL.revokeObjectURL(url);
+                        }}
+                        style={{
+                          display: "inline-block",
+                          padding: "6px 12px",
+                          background: "#3498db",
+                          color: "white",
+                          borderRadius: 8,
+                          textDecoration: "none",
+                          fontSize: 13,
+                          marginRight: 8,
+                          cursor: "pointer"
+                        }}
+                      >
+                        Завантажити скан
+                      </button>
+                    )}
 
                       {(req.status === "new" || req.status === "awaiting_purchase") && (
                         <>

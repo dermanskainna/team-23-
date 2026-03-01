@@ -2,6 +2,11 @@ from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 import os
+from datetime import datetime
+
+def attachment_path(instance, filename):
+    now = datetime.now()
+    return os.path.join(str(now.year), f"{now.month:02}", filename)
 
 class Request(models.Model):
     STATUS_CHOICES = (
@@ -35,7 +40,7 @@ class Request(models.Model):
     reject_reason = models.TextField(blank=True, null=True, verbose_name="Причина відхилення")
 
     attachment = models.FileField(
-        upload_to='%Y/%m/',
+        upload_to=attachment_path,
         blank=True,
         null=True,
         verbose_name="Скан від військової частини"
