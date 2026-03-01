@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import ChatBox from '../components/ChatBox'
 
 const UA_PREFIX = "+380";
 
@@ -245,6 +246,10 @@ export default function Profile() {
                           <p style={{ margin: '10px 0 0 0', color: '#e74c3c', fontSize: '14px', fontWeight: 'bold' }}>
                             Причина: {req.reject_reason}
                           </p>
+                        )}
+
+                        {req.status === 'accepted' && req.conversation_id && (
+                          <ChatBox conversationId={req.conversation_id} user={user} />
                         )}
                       </div>
                       <div style={{ display: 'flex', gap: '10px' }}>

@@ -11,7 +11,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.room_group_name = f"chat_{self.conversation_id}"
         self.user = self.scope["user"]
 
-        # Забороняємо анонімним
         if self.user.is_anonymous:
             await self.close()
             return
@@ -32,11 +31,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
         conversation = Conversation.objects.filter(id=self.conversation_id).first()
         if not conversation:
             return False
-        return self.user == conversation.volunteer or self.user == conversation.military
+
+        # Учасник і заявка прийнята
+        is_participant = self.user == conversation.volunteer or self.user == conversation.military
+        is_accepted = conversation.request.status == "accepted"  # <-- status із Request
+        return is_participant and is_accepted
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        message_text = data["message"]
+        message_text = data.get("message", "").strip()
+        if not message_text:
+            return
 
         message = await self.save_message(message_text)
 
@@ -44,7 +49,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             {
                 "type": "chat_message",
-                "message": message.text,  # pylint: disable=unsubscriptable-object
+                "message": message.text,
                 "sender": self.user.username,
                 "timestamp": str(message.timestamp),
             }
