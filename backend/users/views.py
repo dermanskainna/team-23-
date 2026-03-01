@@ -5,6 +5,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 from .serializers import UserRegistrationSerializer
+from .models import CustomUser
 
 @api_view(['POST'])
 def register_user(request):
@@ -21,7 +22,8 @@ def register_user(request):
                 "email": user.email,
                 "role": user.role,
                 "full_name": user.full_name,
-                "organization": user.organization
+                "organization": user.organization,
+                "is_verified": getattr(user, "is_verified", False)
             },
             "token": token.key
         }, status=status.HTTP_201_CREATED)
@@ -45,7 +47,8 @@ def login_user(request):
                 "email": user.email,
                 "role": user.role,
                 "full_name": user.full_name,
-                "organization": user.organization
+                "organization": user.organization,
+                "is_verified": getattr(user, "is_verified", False)
             },
             "token": token.key
         }, status=status.HTTP_200_OK)
@@ -58,3 +61,40 @@ def login_user(request):
 def logout_user(request):
     request.user.auth_token.delete()
     return Response({"message": "Успішний вихід із системи"}, status=status.HTTP_200_OK)
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def pending_military(request):
+    if getattr(request.user, "role", None) != "volunteer":
+        return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+
+    qs = CustomUser.objects.filter(role="military", is_verified=False).order_by("id")
+
+    data = []
+    for u in qs:
+        data.append({
+            "id": u.id,
+            "username": u.username,
+            "email": u.email,
+            "full_name": u.full_name,
+            "organization": u.organization,
+            "is_verified": u.is_verified,
+        })
+
+    return Response(data, status=status.HTTP_200_OK)
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def verify_military(request, pk: int):
+    if getattr(request.user, "role", None) != "volunteer":
+        return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        u = CustomUser.objects.get(pk=pk, role="military")
+    except CustomUser.DoesNotExist:
+        return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    u.is_verified = True
+    u.save(update_fields=["is_verified"])
+
+    return Response({"detail": "Verified", "id": u.id}, status=status.HTTP_200_OK)

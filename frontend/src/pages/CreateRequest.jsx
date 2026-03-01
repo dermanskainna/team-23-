@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function CreateRequest() {
+  const me = JSON.parse(localStorage.getItem("user") || "null");
+  const isUnverifiedMilitary = me?.role === "military" && me?.is_verified === false;
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState('');
@@ -41,7 +43,6 @@ export default function CreateRequest() {
     }
 
     try {
-      // Використовуємо FormData для підтримки файлів
       const data = new FormData();
       data.append('title', formData.title);
       data.append('description', formData.description);
@@ -77,6 +78,15 @@ export default function CreateRequest() {
   return (
     <section className="section" style={{ background: '#f9f8f6', minHeight: '80vh', padding: '40px 0' }}>
       <div className="container">
+        {me?.role === "military" && me?.is_verified === false && (
+          <div className="card" style={{ marginBottom: 16, borderLeft: "4px solid #f59e0b" }}>
+            <b>Акаунт не підтверджено.</b>
+            <div style={{ marginTop: 6, opacity: 0.9 }}>
+              Ви поки не можете створювати заявки. Зачекайте, поки волонтер підтвердить Ваш акаунт.
+            </div>
+          </div>
+        )}
+        {!(me?.role === "military" && me?.is_verified === false) && (
         <div className="card" style={{ maxWidth: '600px', margin: '0 auto', padding: '40px' }}>
           <h2 style={{ marginBottom: "20px", color: "#2C3E50", textAlign: "center" }}>Новий запит на допомогу</h2>
 
@@ -149,7 +159,8 @@ export default function CreateRequest() {
             </button>
           </form>
         </div>
-      </div>
-    </section>
+      )}
+    </div>
+  </section>
   );
 }

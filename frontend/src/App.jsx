@@ -16,6 +16,7 @@ import Tracking from './pages/Tracking';
 import Footer from './components/Footer';
 import Suppliers from './pages/Suppliers';
 import Offers from './pages/Offers';
+import VerifyMilitary from './pages/VerifyMilitary';
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="/tracking" element={<Tracking />} />
             <Route path="/suppliers" element={<Suppliers />} />
             <Route path="/offers" element={<Offers />} />
+            <Route path="/verify-military" element={<VerifyMilitary />} />
           </Routes>
         </main>
 

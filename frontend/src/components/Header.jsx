@@ -94,6 +94,7 @@ export default function Header() {
               <Link to="/warehouse" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>Склад</Link>
               <Link to="/suppliers" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>Постачальники</Link>
               <Link to="/offers" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>Офери</Link>
+              <Link to="/verify-military" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>Підтвердження</Link>
               <Link to="/profile" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>Профіль</Link>
             </>
           )}
