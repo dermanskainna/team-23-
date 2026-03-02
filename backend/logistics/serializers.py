@@ -11,7 +11,7 @@ class RequestSerializer(serializers.ModelSerializer):
         model = Request
         fields = [
             'id', 'title', 'description', 'location', 'status',
-            'urgency', 'quantity', 'reject_reason', 'created_at',  # <--- ДОДАЛИ 'quantity'
+            'urgency', 'quantity', 'reject_reason', 'created_at',
             'author_name', 'author_organization',
             'feedback', 'attachment', 'attachment_url'
         ]
