@@ -35,8 +35,6 @@ export default function Login() {
         };
         localStorage.setItem("user", JSON.stringify(userDataToSave));
 
-        alert("Успішний вхід! Токен отримано: " + data.token.substring(0, 10) + "...");
-
         if (data.user.role === 'military') {
           navigate('/create-request');
         } else if (data.user.role === 'volunteer') {
@@ -95,10 +93,35 @@ export default function Login() {
             />
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ marginTop: '10px', padding: '12px' }} disabled={isLoading}>
-            {isLoading ? 'Завантаження...' : 'Увійти'}
-          </button>
-          <p><Link to="/register">Зареєструватися</Link></p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '10px' }}>
+            <button type="submit" className="btn btn-primary" style={{ padding: '12px', fontSize: '15px' }} disabled={isLoading}>
+              {isLoading ? 'Завантаження...' : 'Увійти'}
+            </button>
+
+            <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', margin: '4px 0' }}>або</div>
+
+            <Link to="/register" style={{ textDecoration: 'none' }}>
+              <button
+                type="button"
+                className="btn"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: 'transparent',
+                  border: '2px solid #1E3F20',
+                  color: '#1E3F20',
+                  fontWeight: 'bold',
+                  fontSize: '15px',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => { e.target.style.background = '#1E3F20'; e.target.style.color = 'white'; }}
+                onMouseLeave={(e) => { e.target.style.background = 'transparent'; e.target.style.color = '#1E3F20'; }}
+              >
+                Зареєструватися
+              </button>
+            </Link>
+          </div>
         </form>
 
       </div>

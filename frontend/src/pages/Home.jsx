@@ -49,16 +49,15 @@ export default function Home() {
 
   return (
     <>
-      <section className="hero" style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', minHeight: '450px' }}>
+      <section className="hero" style={{ background: '#3A5A40', color: 'white', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', minHeight: '450px' }}>
         <div className="container" style={{ position: 'relative', zIndex: 2 }}>
-          <h1 style={{ maxWidth: '600px' }}>ВАРТА</h1>
-          <p style={{ maxWidth: '500px' }}>Платформа централізованого волонтерства</p>
+          <h1 style={{ maxWidth: '600px', color: 'white' }}>ВАРТА</h1>
+          <p style={{ maxWidth: '500px', color: 'rgba(255,255,255,0.9)' }}>Платформа централізованого волонтерства</p>
           <Link to={buttonLink}>
-            <button className="btn btn-primary">{buttonText}</button>
+            <button className="btn btn-primary" style={{ background: '#F4A261', border: 'none', color: 'white' }}>{buttonText}</button>
           </Link>
         </div>
 
-        {/* ПРАВА КАРТИНКА - тепер використовуємо змінну heroIllustration */}
         <div style={{
           position: 'absolute',
           right: '0',
@@ -69,7 +68,7 @@ export default function Home() {
           pointerEvents: 'none'
         }}>
           <img
-            src={heroIllustration} // Змінна з імпорту замість рядка "/hero-image.png"
+            src={heroIllustration}
             alt="Volunteer illustration"
             style={{
               width: '100%',
@@ -80,7 +79,6 @@ export default function Home() {
         </div>
       </section>
 
-        {/* БАНЕРИ З ПОДІЯМИ */}
         <section className="section" style={{ background: '#f9f8f6', padding: '60px 0 80px' }}>
           <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <h2 style={{
@@ -94,8 +92,8 @@ export default function Home() {
               {[
                 {
                   id: 1,
-                  image: "штурмова.jpg", // або імпортована змінна
-                  url: "https://ab3.army/" // куди переходити
+                  image: "штурмова.jpg",
+                  url: "https://ab3.army/"
                 },
                 {
                   id: 2,
@@ -115,14 +113,14 @@ export default function Home() {
                     height: '300px',
                     background: '#ffffff',
                     borderRadius: '12px',
-                    overflow: 'hidden', // щоб картинка не виходила за краї закруглення
+                    overflow: 'hidden',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
                     transition: 'transform 0.3s ease, box-shadow 0.3s ease',
                    boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
-                    textDecoration: 'none' // прибираємо підкреслення, якщо це посилання
+                    textDecoration: 'none'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'scale(1.02)';
@@ -140,11 +138,10 @@ export default function Home() {
                       style={{
                         width: '100%',
                         height: '100%',
-                        objectFit: 'cover' // картинка заповнить весь простір
+                        objectFit: 'cover'
                       }}
                     />
                   ) : (
-                    /* Заглушка, якщо картинки немає */
                     <div style={{ color: '#cbd5e1', textAlign: 'center' }}>
                       <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -161,7 +158,6 @@ export default function Home() {
         </section>
 
 
-      {/* --- НОВИЙ БЛОК: Як це працює --- */}
       <section className="section" style={{ padding: '80px 0', background: '#ffffff' }}>
         <div className="container" style={{ maxWidth: '1010px', margin: '0 auto', textAlign: 'center' }}>
           <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#2C3E50', marginBottom: '40px' }}>Як це працює</h2>
@@ -185,8 +181,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- НОВИЙ БЛОК: В цифрах --- */}
-      <section className="section" style={{ background: '#F4A261', padding: '60px 0', color: '#fff' }}>
+      <section className="section" style={{ background: '#3A5A40', padding: '60px 0', color: '#fff' }}>
         <div className="container" style={{ display: 'flex', gap: '50px', justifyContent: 'center', flexWrap: 'wrap' }}>
           {[
             { id: 1, value: "1000+", label: "Оброблених запитів" },
@@ -194,14 +189,13 @@ export default function Home() {
             { id: 3, value: "24/7", label: "Підтримка" }
           ].map(stat => (
             <div key={stat.id} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '36px', fontWeight: '700' }}>{stat.value}</div>
+              <div style={{ fontSize: '36px', fontWeight: '700', color: '#F4A261' }}>{stat.value}</div>
               <div style={{ fontSize: '16px', marginTop: '5px' }}>{stat.label}</div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ВІДГУКИ */}
       <section className="section" style={{ background: '#ffffff', padding: '80px 0', overflow: 'hidden' }}>
         <div className="container">
           <h2 style={{ textAlign: 'center', color: '#2C3E50', marginBottom: '15px', fontSize: '32px' }}>
@@ -241,20 +235,19 @@ export default function Home() {
             </div>
           </div>
 
-          {/* НАВІГАЦІЯ СЛАЙДЕРА */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1010px', margin: '30px auto 0' }}>
             <div style={{ display: 'flex', gap: '10px' }}>
               {reviews.map((_, index) => (
                 <div key={index} onClick={() => setCurrentIndex(index)} style={{
                     width: currentIndex === index ? '30px' : '10px', height: '10px',
-                    background: currentIndex === index ? '#334155' : '#cbd5e1', borderRadius: '5px',
+                    background: currentIndex === index ? '#1E3F20' : '#cbd5e1', borderRadius: '5px',
                     cursor: 'pointer', transition: 'all 0.3s ease'
                   }}></div>
               ))}
             </div>
             <div style={{ display: 'flex', gap: '15px' }}>
-              <button onClick={prevSlide} style={{ background: 'transparent', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#334155' }}>←</button>
-              <button onClick={nextSlide} style={{ background: 'transparent', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#334155' }}>→</button>
+              <button onClick={prevSlide} style={{ background: 'transparent', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#1E3F20' }}>←</button>
+              <button onClick={nextSlide} style={{ background: 'transparent', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#1E3F20' }}>→</button>
             </div>
           </div>
         </div>

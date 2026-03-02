@@ -1,9 +1,10 @@
+from django.conf import settings
 from django.utils import timezone
 import io
 import os
 import urllib.request
 import ssl
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
@@ -11,9 +12,9 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import Request, WarehouseItem, Feedback
-from .serializers import RequestSerializer, WarehouseItemSerializer, TrackingSerializer, FeedbackSerializer
-from django.http import FileResponse
+
+from .models import Request, WarehouseItem, Feedback, StockTransaction, RequestHistory
+from .serializers import RequestSerializer, WarehouseItemSerializer, TrackingSerializer, FeedbackSerializer, RequestHistorySerializer
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
@@ -33,29 +34,11 @@ def request_list_create(request):
         serializer = RequestSerializer(data=request.data)
         if serializer.is_valid():
             new_request = serializer.save(author=request.user)
-
-            matched_item = None
-            warehouse_items = WarehouseItem.objects.all()
-            title_lower = new_request.title.lower()
-            desc_lower = new_request.description.lower()
-
-            for item in warehouse_items:
-                item_name_lower = item.name.lower()
-                if item_name_lower in title_lower or item_name_lower in desc_lower:
-                    matched_item = item
-                    break
-
-            if matched_item and matched_item.quantity > 0:
-                matched_item.quantity -= 1
-                matched_item.save()
-            else:
-                new_request.status = 'awaiting_purchase'
-                new_request.save()
-
             result_serializer = RequestSerializer(new_request)
             return Response(result_serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
@@ -70,10 +53,58 @@ def update_request_status(request, pk):
 
     new_status = request.data.get('status')
     reject_reason = request.data.get('reject_reason', '')
+    warehouse_item_id = request.data.get('warehouse_item_id')
 
     valid_statuses = dict(Request.STATUS_CHOICES).keys()
     if new_status not in valid_statuses:
         return Response({"error": "Неправильний статус."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if new_status == 'in_progress' and logistics_request.status in ['new', 'awaiting_purchase']:
+        if not warehouse_item_id:
+            return Response({"error": "Оберіть товар зі складу для списання."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            item = WarehouseItem.objects.get(id=warehouse_item_id)
+        except WarehouseItem.DoesNotExist:
+            return Response({"error": "Обраний товар не знайдено на складі."}, status=status.HTTP_404_NOT_FOUND)
+
+        if item.quantity >= logistics_request.quantity:
+            item.quantity -= logistics_request.quantity
+            item.save(update_fields=['quantity'])
+
+            StockTransaction.objects.create(
+                item=item,
+                logistics_request=logistics_request,
+                quantity_change=-logistics_request.quantity,
+                description=f"Ручне списання для заявки #{logistics_request.id}"
+            )
+        else:
+            return Response(
+                {"error": f"На складі лише {item.quantity} шт. '{item.name}', а потрібно {logistics_request.quantity}."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    if new_status in ['rejected', 'new'] and logistics_request.status == 'in_progress':
+        transaction = StockTransaction.objects.filter(logistics_request=logistics_request, quantity_change__lt=0).first()
+        if transaction:
+            item = transaction.item
+            item.quantity += abs(transaction.quantity_change)
+            item.save(update_fields=['quantity'])
+
+            StockTransaction.objects.create(
+                item=item,
+                logistics_request=logistics_request,
+                quantity_change=abs(transaction.quantity_change),
+                description=f"Повернення на склад (Заявка #{logistics_request.id} відхилена/скасована)"
+            )
+
+    if logistics_request.status != new_status:
+        RequestHistory.objects.create(
+            logistics_request=logistics_request,
+            changed_by=request.user,
+            old_status=logistics_request.status,
+            new_status=new_status
+        )
 
     logistics_request.status = new_status
     if new_status == 'rejected':
@@ -109,12 +140,24 @@ def warehouse_list_create(request):
                 existing.quantity = existing.quantity + qty
                 existing.save(update_fields=['quantity'])
 
+                StockTransaction.objects.create(
+                    item=existing,
+                    quantity_change=qty,
+                    description="Поповнення існуючого товару волонтером"
+                )
+
                 return Response(
                     WarehouseItemSerializer(existing).data,
                     status=status.HTTP_200_OK
                 )
 
             created = serializer.save()
+            StockTransaction.objects.create(
+                item=created,
+                quantity_change=created.quantity,
+                description="Оприбуткування нового товару"
+            )
+
             return Response(
                 WarehouseItemSerializer(created).data,
                 status=status.HTTP_201_CREATED
@@ -163,7 +206,7 @@ def generate_waybill_pdf(request, pk):
     p.line(100, 680, 500, 680)
 
     p.setFont('Arial', 14)
-    p.drawString(100, 650, f"Що передається: {logistics_request.title}")
+    p.drawString(100, 650, f"Що передається: {logistics_request.title} ({logistics_request.quantity} шт.)")
 
     p.setFont('Arial', 12)
     p.drawString(100, 620, f"Деталі:")
@@ -233,7 +276,7 @@ def generate_monthly_report_pdf(request):
     y_pos = 600
     if completed_requests.exists():
         for req in completed_requests:
-            text = f"#{req.id} | {req.title[:30]}... | {req.location} | Від: {req.author.username}"
+            text = f"#{req.id} | {req.title[:30]} ({req.quantity} шт.) | {req.location} | Від: {req.author.username}"
             p.drawString(100, y_pos, text)
             y_pos -= 20
 
@@ -314,15 +357,35 @@ def download_attachment(request, pk):
     if not req.attachment:
         return Response({"error": "Файл не прикріплено."}, status=404)
 
-    if request.user.role not in ['volunteer', 'military'] or (request.user.role == 'military' and request.user != req.author):
+    if request.user.role not in ['volunteer', 'military'] or \
+       (request.user.role == 'military' and request.user != req.author):
         return Response({"error": "Доступ заборонено."}, status=403)
 
-    file_path = os.path.join(settings.MEDIA_ROOT, req.attachment.name)
+    file_path = req.attachment.path
     if not os.path.exists(file_path):
         return Response({"error": "Файл не знайдено на сервері."}, status=404)
 
-    return FileResponse(
-        open(file_path, 'rb'),
-        as_attachment=True,
-        filename=os.path.basename(req.attachment.name)
-    )
+    try:
+        return FileResponse(
+            open(file_path, 'rb'),
+            as_attachment=True,
+            filename=os.path.basename(file_path)
+        )
+    except Exception as e:
+        print("FileResponse error:", e)
+        return Response({"error": "Сталася помилка при відкритті файлу."}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def request_history_view(request, pk):
+    try:
+        logistics_request = Request.objects.get(pk=pk)
+    except Request.DoesNotExist:
+        return Response({"error": "Заявку не знайдено."}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.user.role != 'volunteer' and logistics_request.author != request.user:
+        return Response({"error": "Доступ заборонено."}, status=status.HTTP_403_FORBIDDEN)
+
+    history = RequestHistory.objects.filter(logistics_request=logistics_request).order_by('-created_at')
+    serializer = RequestHistorySerializer(history, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)

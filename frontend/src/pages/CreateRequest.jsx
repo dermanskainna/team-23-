@@ -14,18 +14,20 @@ export default function CreateRequest() {
     description: '',
     location: '',
     urgency: 'low',
+    quantity: 1,
   });
 
   const [file, setFile] = useState(null);
 
   useEffect(() => {
     if (location.state && location.state.repeatedData) {
-      const { title, description, location: reqLocation, urgency } = location.state.repeatedData;
+      const { title, description, location: reqLocation, urgency, quantity } = location.state.repeatedData;
       setFormData({
         title: title || '',
         description: description || '',
         location: reqLocation || '',
-        urgency: urgency || 'low'
+        urgency: urgency || 'low',
+        quantity: quantity || 1
       });
     }
   }, [location]);
@@ -48,6 +50,7 @@ export default function CreateRequest() {
       data.append('description', formData.description);
       data.append('location', formData.location);
       data.append('urgency', formData.urgency);
+      data.append('quantity', formData.quantity);
       if (file) data.append('attachment', file);
 
       const response = await fetch('http://127.0.0.1:8000/api/logistics/requests/', {
@@ -107,10 +110,22 @@ export default function CreateRequest() {
             </div>
 
             <div>
+              <label style={{ fontWeight: "600", marginBottom: 8, display: "block" }}>Кількість (шт.)</label>
+              <input
+                type="number"
+                min="1"
+                className="input"
+                required
+                value={formData.quantity}
+                onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
+              />
+            </div>
+
+            <div>
               <label style={{ fontWeight: "600", marginBottom: 8, display: "block" }}>Детальний опис</label>
               <textarea
                 className="input"
-                placeholder="Опишіть деталі: кількість, специфікації, для яких задач..."
+                placeholder="Опишіть деталі: специфікації, для яких задач..."
                 rows="4"
                 required
                 value={formData.description}

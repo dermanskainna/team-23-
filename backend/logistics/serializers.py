@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Request, WarehouseItem, Feedback
+from .models import RequestHistory
 
 class RequestSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.username', read_only=True)
@@ -10,7 +11,7 @@ class RequestSerializer(serializers.ModelSerializer):
         model = Request
         fields = [
             'id', 'title', 'description', 'location', 'status',
-            'urgency', 'reject_reason', 'created_at',
+            'urgency', 'quantity', 'reject_reason', 'created_at',  # <--- ДОДАЛИ 'quantity'
             'author_name', 'author_organization',
             'feedback', 'attachment', 'attachment_url'
         ]
@@ -27,7 +28,7 @@ class WarehouseItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WarehouseItem
-        fields = ['id', 'name', 'category', 'category_display', 'quantity', 'last_updated', 'attachment_url']
+        fields = ['id', 'name', 'category', 'category_display', 'quantity', 'last_updated',]
 
 class TrackingSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -46,3 +47,12 @@ class FeedbackSerializer(serializers.ModelSerializer):
         if value < 1 or value > 5:
             raise serializers.ValidationError("Оцінка має бути від 1 до 5.")
         return value
+
+class RequestHistorySerializer(serializers.ModelSerializer):
+    changed_by_name = serializers.CharField(source='changed_by.username', read_only=True, default="Система")
+    old_status_display = serializers.CharField(source='get_old_status_display', read_only=True)
+    new_status_display = serializers.CharField(source='get_new_status_display', read_only=True)
+
+    class Meta:
+        model = RequestHistory
+        fields = ['id', 'old_status', 'new_status', 'old_status_display', 'new_status_display', 'changed_by_name', 'created_at']

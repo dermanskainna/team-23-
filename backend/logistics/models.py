@@ -12,7 +12,6 @@ class Request(models.Model):
     STATUS_CHOICES = (
         ('new', 'Новий'),
         ('in_progress', 'В роботі'),
-        ('awaiting_purchase', 'Очікує закупівлі'),
         ('completed', 'Виконано'),
         ('rejected', 'Відхилено'),
     )
@@ -33,6 +32,8 @@ class Request(models.Model):
     title = models.CharField(max_length=200, verbose_name="Назва запиту")
     description = models.TextField(verbose_name="Опис (що саме потрібно)")
     location = models.CharField(max_length=150, verbose_name="Локація / Напрямок")
+
+    quantity = models.PositiveIntegerField(default=1, verbose_name="Кількість")
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', verbose_name="Статус")
     urgency = models.CharField(max_length=20, choices=URGENCY_CHOICES, default='medium', verbose_name="Терміновість")
@@ -98,3 +99,45 @@ class Feedback(models.Model):
 
     def __str__(self):
         return f"Відгук до заявки #{self.request_id} — {self.rating}/5"
+
+class StockTransaction(models.Model):
+    item = models.ForeignKey(
+        WarehouseItem,
+        on_delete=models.CASCADE,
+        related_name='transactions',
+        verbose_name="Товар"
+    )
+    logistics_request = models.ForeignKey(
+        Request,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Пов'язана заявка"
+    )
+    quantity_change = models.IntegerField(verbose_name="Зміна кількості (+/-)")
+    description = models.CharField(max_length=255, verbose_name="Опис транзакції")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата")
+
+def __str__(self):
+        return f"{self.item.name} | {self.quantity_change} шт."
+
+
+class RequestHistory(models.Model):
+    logistics_request = models.ForeignKey(
+        Request,
+        on_delete=models.CASCADE,
+        related_name='history',
+        verbose_name="Заявка"
+    )
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="Хто змінив"
+    )
+    old_status = models.CharField(max_length=20, verbose_name="Старий статус")
+    new_status = models.CharField(max_length=20, verbose_name="Новий статус")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата зміни")
+
+    def __str__(self):
+        return f"Заявка #{self.logistics_request_id}: {self.old_status} -> {self.new_status}"

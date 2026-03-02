@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from "react-router-dom";
 
 const API_URL = 'http://127.0.0.1:8000/api/logistics/warehouse/';
 
 export default function Warehouse() {
+  const navigate = useNavigate();
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -10,14 +12,26 @@ export default function Warehouse() {
   const [showForm, setShowForm] = useState(false);
   const [activeCategory, setActiveCategory] = useState('Всі');
 
-  // quantity як рядок, щоб можна було стерти поле (і не “прилипав” 0)
   const [newItem, setNewItem] = useState({ name: '', category: '', quantity: '' });
 
-  // Якщо у вас auth через токен — дістань його звідси (підлаштуй під ваш проєкт)
-  const token = localStorage.getItem('token');
+  const getToken = () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      return user?.token || "";
+    } catch {
+      return "";
+    }
+  };
 
   const fetchWarehouse = async () => {
     setError('');
+    const token = getToken();
+
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -25,13 +39,13 @@ export default function Warehouse() {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'Authorization': `Token ${token}`,
         },
       });
 
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(`GET warehouse failed (${res.status}): ${text}`);
+        throw new Error(`Помилка сервера (${res.status}): ${text}`);
       }
 
       const data = await res.json();
@@ -45,7 +59,6 @@ export default function Warehouse() {
 
   useEffect(() => {
     fetchWarehouse();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleAddItem = async (e) => {
@@ -59,12 +72,14 @@ export default function Warehouse() {
     if (!Number.isFinite(qty) || qty <= 0) return;
 
     setError('');
+    const token = getToken();
+
     try {
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'Authorization': `Token ${token}`,
         },
         body: JSON.stringify({
           name,
@@ -75,10 +90,9 @@ export default function Warehouse() {
 
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(`POST warehouse failed (${res.status}): ${text}`);
+        throw new Error(`Не вдалося додати товар (${res.status}): ${text}`);
       }
 
-      // Важливо: після POST робимо GET, щоб UI точно відобразив merge з бекенду
       await fetchWarehouse();
 
       setNewItem({ name: '', category: '', quantity: '' });
@@ -89,14 +103,14 @@ export default function Warehouse() {
   };
 
   const categories = useMemo(
-    () => ['Всі', ...new Set(inventory.map((item) => item.category))],
+    () => ['Всі', ...new Set(inventory.map((item) => item.category_display || item.category))],
     [inventory]
   );
 
   const filteredInventory = useMemo(() => {
     return activeCategory === 'Всі'
       ? inventory
-      : inventory.filter((item) => item.category === activeCategory);
+      : inventory.filter((item) => (item.category_display || item.category) === activeCategory);
   }, [activeCategory, inventory]);
 
   return (
@@ -135,17 +149,16 @@ export default function Warehouse() {
                 style={{ marginBottom: 0, width: 220 }}
                 value={newItem.category}
                 onChange={(e) => setNewItem((prev) => ({ ...prev, category: e.target.value }))}
+                required
               >
                 <option value="" disabled>Оберіть категорію</option>
-                <option value="Електроніка">Електроніка</option>
-                <option value="Медицина">Медицина</option>
-                <option value="Амуніція">Амуніція</option>
-                <option value="Транспорт">Транспорт</option>
-                <option value="Їжа та Вода">Їжа та Вода</option>
-                <option value="Інше">Інше</option>
+                <option value="drones">Дрони та електроніка</option>
+                <option value="medicine">Медицина</option>
+                <option value="ammunition">Амуніція</option>
+                <option value="vehicles">Транспорт</option>
+                <option value="other">Інше</option>
               </select>
 
-              {/* quantity як текст з inputMode numeric — щоб не залипав 0 і можна було чистити */}
               <input
                 className="input"
                 style={{ marginBottom: 0, width: 160 }}
@@ -204,7 +217,7 @@ export default function Warehouse() {
                   <div style={{ flex: 2 }}>{item.name}</div>
                   <div style={{ flex: 1 }}>
                     <span className="status-badge volunteer" style={{ background: '#78B27C' }}>
-                      {item.category}
+                      {item.category_display || item.category}
                     </span>
                   </div>
                   <div style={{ flex: 1, textAlign: 'center', fontWeight: 'bold' }}>
