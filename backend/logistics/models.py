@@ -29,6 +29,14 @@ class Request(models.Model):
         related_name='requests'
     )
 
+    volunteer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='accepted_requests'
+    )
+
     title = models.CharField(max_length=200, verbose_name="Назва запиту")
     description = models.TextField(verbose_name="Опис (що саме потрібно)")
     location = models.CharField(max_length=150, verbose_name="Локація / Напрямок")

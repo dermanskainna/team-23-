@@ -121,10 +121,24 @@ export default function VolunteerDashboard() {
   }, []);
 
   const filteredRequests = useMemo(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user) return [];
+
     return requests.filter((req) => {
-      if (filter === "all") return true;
-      if (filter === "new") return req.status === "new" || req.status === "awaiting_purchase";
-      return req.status === filter;
+      switch (filter) {
+        case "all":
+          return true;
+        case "new":
+          return req.status === "new" || req.status === "awaiting_purchase";
+        case "in_progress":
+          return req.status === "in_progress" && req.volunteer?.id === user.id;
+        case "completed":
+          return req.status === "completed" && req.volunteer?.id === user.id;
+        case "rejected":
+          return req.status === "rejected";
+        default:
+          return false;
+      }
     });
   }, [requests, filter]);
 

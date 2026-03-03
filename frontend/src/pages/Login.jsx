@@ -30,6 +30,7 @@ export default function Login() {
 
       if (response.ok) {
         const userDataToSave = {
+          id: data.user.id,
           ...data.user,
           token: data.token
         };

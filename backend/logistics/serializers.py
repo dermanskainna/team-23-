@@ -6,6 +6,8 @@ class RequestSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.username', read_only=True)
     author_organization = serializers.CharField(source='author.organization', read_only=True)
     attachment_url = serializers.SerializerMethodField()
+    volunteer = serializers.StringRelatedField(read_only=True)
+    volunteer_username = serializers.CharField(source='volunteer.username', read_only=True)
 
     class Meta:
         model = Request
@@ -13,9 +15,10 @@ class RequestSerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'location', 'status',
             'urgency', 'quantity', 'reject_reason', 'created_at',
             'author_name', 'author_organization',
-            'feedback', 'attachment', 'attachment_url'
+            'feedback', 'attachment', 'attachment_url',
+            'volunteer', 'volunteer_username'
         ]
-        read_only_fields = ['id', 'status', 'reject_reason', 'created_at', 'feedback']
+        read_only_fields = ['id', 'status', 'reject_reason', 'created_at', 'feedback', 'volunteer']
 
     def get_attachment_url(self, obj):
         request = self.context.get('request')

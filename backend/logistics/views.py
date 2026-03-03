@@ -60,6 +60,8 @@ def update_request_status(request, pk):
         return Response({"error": "Неправильний статус."}, status=status.HTTP_400_BAD_REQUEST)
 
     if new_status == 'in_progress' and logistics_request.status in ['new', 'awaiting_purchase']:
+        logistics_request.volunteer = request.user
+
         if not warehouse_item_id:
             return Response({"error": "Оберіть товар зі складу для списання."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -97,6 +99,7 @@ def update_request_status(request, pk):
                 quantity_change=abs(transaction.quantity_change),
                 description=f"Повернення на склад (Заявка #{logistics_request.id} відхилена/скасована)"
             )
+        logistics_request.volunteer = None
 
     if logistics_request.status != new_status:
         RequestHistory.objects.create(
@@ -107,10 +110,7 @@ def update_request_status(request, pk):
         )
 
     logistics_request.status = new_status
-    if new_status == 'rejected':
-        logistics_request.reject_reason = reject_reason
-    else:
-        logistics_request.reject_reason = ''
+    logistics_request.reject_reason = reject_reason if new_status == 'rejected' else ''
 
     logistics_request.save()
     serializer = RequestSerializer(logistics_request)
