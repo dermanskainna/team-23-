@@ -21,6 +21,7 @@ export default function VolunteerDashboard() {
   const [requestToReject, setRequestToReject] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
 
+<<<<<<< HEAD
   const [isAllocateModalOpen, setIsAllocateModalOpen] = useState(false);
   const [requestToAllocate, setRequestToAllocate] = useState(null);
   const [selectedWarehouseItemId, setSelectedWarehouseItemId] = useState("");
@@ -30,6 +31,13 @@ export default function VolunteerDashboard() {
   const [historyData, setHistoryData] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [currentHistoryReqId, setCurrentHistoryReqId] = useState(null);
+=======
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackError, setFeedbackError] = useState("");
+  const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [feedbackForRequest, setFeedbackForRequest] = useState(null);
+>>>>>>> d38fc50 (Реалізувала фронтенд та бекенд відкугів для військових та волонтерів)
 
   const getSavedUser = () => {
     try {
@@ -44,7 +52,11 @@ export default function VolunteerDashboard() {
     return u?.token || "";
   };
 
+<<<<<<< HEAD
   const fetchData = async () => {
+=======
+  const fetchRequests = async () => {
+>>>>>>> d38fc50 (Реалізувала фронтенд та бекенд відкугів для військових та волонтерів)
     const savedUser = getSavedUser();
     if (!savedUser || !savedUser.token || savedUser.role !== "volunteer") {
       navigate("/login");
@@ -118,6 +130,7 @@ export default function VolunteerDashboard() {
 
   useEffect(() => {
     fetchData();
+    fetchRequests();
   }, []);
 
   const filteredRequests = useMemo(() => {
@@ -207,6 +220,45 @@ export default function VolunteerDashboard() {
     }
   };
 
+  const openFeedback = async (reqId) => {
+    const token = getToken();
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:8000/api/logistics/requests/${reqId}/feedback/`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Token ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (res.status === 204) {
+        alert("Відгуку ще немає");
+        return;
+      }
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+
+      const data = await res.json();
+
+      alert(
+        `Оцінка: ${"⭐".repeat(data.rating)}\n\nКоментар:\n${data.comment || "Без коментаря"}`
+      );
+    } catch (e) {
+      alert("Не вдалося завантажити відгук");
+    }
+  };
+
   return (
     <section className="section">
       <div className="container" style={{ position: "relative" }}>
@@ -240,7 +292,11 @@ export default function VolunteerDashboard() {
                 </div>
 
                 {filteredRequests.map((req) => (
-                  <div key={req.id} style={{ display: "flex", alignItems: "center", padding: "15px 0", borderBottom: "1px solid #eee" }}>
+                  <div
+                    key={req.id}
+                    className="request-row"
+                    style={{ display: "flex", alignItems: "center", padding: "15px 0", borderBottom: "1px solid #eee" }}
+                  >
                     <div style={{ flex: 1, fontSize: 14, color: "#555" }}>{req.date || (req.created_at ? String(req.created_at).slice(0, 10) : "—")}</div>
                     <div style={{ flex: 2, fontWeight: 500 }}>
                       <span style={{ color: "#888", marginRight: 8, fontSize: 13 }}>#{req.id}</span>
@@ -264,6 +320,7 @@ export default function VolunteerDashboard() {
                     </div>
 
                     <div style={{ flex: 1 }}>{getStatusBadge(req.status)}</div>
+<<<<<<< HEAD
 
                     <div style={{ flex: 3.5, textAlign: "right", display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
 
@@ -299,6 +356,56 @@ export default function VolunteerDashboard() {
                           Скан
                         </button>
                       )}
+=======
+                    <div style={{ flex: 1, textAlign: "center" }}>
+                      <span className={`urgency-badge ${req.urgency || "medium"}`}>{getUrgencyLabel(req.urgency || "medium")}</span>
+                    </div>
+                    <div
+                      className="request-row-actions"
+                      style={{ flex: 3, textAlign: "right", display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}
+                    >
+
+                      {req.attachment && (
+                      <button
+                        onClick={async () => {
+                          const token = localStorage.getItem("access");
+                          const response = await fetch(`/api/requests/${req.id}/download/`, {
+                            headers: {
+                              'Authorization': `Bearer ${token}`
+                            }
+                          });
+
+                          if (!response.ok) {
+                            alert("Помилка завантаження файлу");
+                            return;
+                          }
+
+                          const blob = await response.blob();
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = url;
+                          a.download = req.attachment.name;
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
+                          window.URL.revokeObjectURL(url);
+                        }}
+                        style={{
+                          display: "inline-block",
+                          padding: "6px 12px",
+                          background: "#3498db",
+                          color: "white",
+                          borderRadius: 8,
+                          textDecoration: "none",
+                          fontSize: 13,
+                          marginRight: 8,
+                          cursor: "pointer"
+                        }}
+                      >
+                        Завантажити скан
+                      </button>
+                    )}
+>>>>>>> d38fc50 (Реалізувала фронтенд та бекенд відкугів для військових та волонтерів)
 
                       {(req.status === "new" || req.status === "awaiting_purchase") && (
                         <>
@@ -313,6 +420,19 @@ export default function VolunteerDashboard() {
                           <button className="btn" style={{ background: "#e74c3c", color: "white", padding: "6px 12px", fontSize: 13, border: "none" }} onClick={() => openRejectModal(req.id)}>Відхилити</button>
                         </>
                       )}
+<<<<<<< HEAD
+=======
+                      {req.status === "completed" && (
+                        <button
+                          className="btn"
+                          style={{ padding: "6px 12px", fontSize: 13, background: "#eef2ff" }}
+                          onClick={() => openFeedback(req.id)}
+                          type="button"
+                        >
+                          Відгук
+                        </button>
+                      )}
+>>>>>>> d38fc50 (Реалізувала фронтенд та бекенд відкугів для військових та волонтерів)
                     </div>
                   </div>
                 ))}
@@ -321,6 +441,7 @@ export default function VolunteerDashboard() {
           )}
         </div>
 
+<<<<<<< HEAD
         {isHistoryModalOpen && (
           <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }}>
             <div className="card" style={{ width: 500, background: "white", padding: 30, maxHeight: '80vh', overflowY: 'auto' }}>
@@ -391,6 +512,8 @@ export default function VolunteerDashboard() {
           </div>
         )}
 
+=======
+>>>>>>> d38fc50 (Реалізувала фронтенд та бекенд відкугів для військових та волонтерів)
         {isRejectModalOpen && (
           <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }}>
             <div className="card" style={{ width: 400, background: "white", padding: 30 }}>
@@ -401,6 +524,37 @@ export default function VolunteerDashboard() {
                 <button className="btn" style={{ background: "#e74c3c", color: "white" }} onClick={confirmReject}>Підтвердити</button>
               </div>
             </div>
+          </div>
+        )}
+        {isFeedbackOpen && (
+          <div className="card" style={{ marginTop: 16, borderLeft: "4px solid #3498db" }}>
+            <b>
+              Відгук по заявці #{feedbackForRequest?.id} — {feedbackForRequest?.title}
+            </b>
+
+            {feedbackLoading ? (
+              <p style={{ marginTop: 10 }}>Завантаження...</p>
+            ) : feedbackError ? (
+              <p style={{ marginTop: 10, color: "red" }}>{feedbackError}</p>
+            ) : selectedFeedback ? (
+              <div style={{ marginTop: 10 }}>
+                <div>Оцінка: {"⭐".repeat(selectedFeedback.rating)}</div>
+
+                <div style={{ marginTop: 6 }}>
+                  {selectedFeedback.comment || "Без коментаря"}
+                </div>
+              </div>
+            ) : (
+              <p style={{ marginTop: 10 }}>Відгуку ще немає</p>
+            )}
+
+            <button
+              className="btn"
+              style={{ marginTop: 12 }}
+              onClick={() => setIsFeedbackOpen(false)}
+            >
+              Закрити
+            </button>
           </div>
         )}
       </div>

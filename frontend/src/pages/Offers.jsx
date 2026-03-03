@@ -158,7 +158,7 @@ export default function Offers() {
           <button className="btn" onClick={fetchOffers}>Застосувати</button>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        <div className="two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
           {/* List */}
           <div className="card">
             <h3>Список</h3>

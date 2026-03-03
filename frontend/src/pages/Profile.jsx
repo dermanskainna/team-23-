@@ -38,6 +38,11 @@ export default function Profile() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [openFeedbackFor, setOpenFeedbackFor] = useState(null);
+  const [feedbackForm, setFeedbackForm] = useState({ rating: 5, comment: "" });
+  const [feedbackByRequest, setFeedbackByRequest] = useState({});
+  const [feedbackError, setFeedbackError] = useState("");
+  const [feedbackSuccess, setFeedbackSuccess] = useState("");
   const [formData, setFormData] = useState({
     full_name: '',
     phone: UA_PREFIX,
@@ -140,6 +145,67 @@ export default function Profile() {
     return e;
   }, [formData.full_name, formData.phone]);
 
+  const getToken = () => {
+    const me = JSON.parse(localStorage.getItem("user") || "null");
+    return me?.token || "";
+  };
+
+  const loadFeedback = async (requestId) => {
+    const token = getToken();
+
+    const res = await fetch(`http://127.0.0.1:8000/api/logistics/requests/${requestId}/feedback/`, {
+      headers: { Authorization: `Token ${token}` },
+    });
+
+    if (res.status === 204) return null;
+    if (!res.ok) throw new Error(await res.text());
+
+    return await res.json();
+  };
+
+  const submitFeedback = async (requestId) => {
+    const token = getToken();
+
+    const res = await fetch(`http://127.0.0.1:8000/api/logistics/requests/${requestId}/feedback/`, {
+      method: "POST",
+      headers: {
+        Authorization: `Token ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        rating: feedbackForm.rating,
+        comment: feedbackForm.comment,
+      }),
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+
+    const data = await res.json();
+
+    setFeedbackByRequest((prev) => ({
+      ...prev,
+      [requestId]: data,
+    }));
+
+    setOpenFeedbackFor(null);
+    setFeedbackForm({ rating: 5, comment: "" });
+  };
+
+  const openFeedbackModal = async (req) => {
+    setFeedbackError("");
+    setFeedbackSuccess("");
+    setOpenFeedbackFor(req.id);
+
+    if (!(req.id in feedbackByRequest)) {
+      try {
+        const data = await loadFeedback(req.id);
+        setFeedbackByRequest((prev) => ({ ...prev, [req.id]: data }));
+      } catch (e) {
+        setFeedbackError("Не вдалося завантажити відгук");
+      }
+    }
+  };
+
   const isFormValid = Object.keys(errors).length === 0;
 
   const handleSave = () => {
@@ -238,6 +304,16 @@ export default function Profile() {
                         </h3>
                         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                           <span className={`request-status ${req.status}`}>{getStatusLabel(req.status)}</span>
+                          {req.status === "completed" && (
+                            <button
+                              className="btn"
+                              style={{ padding: "6px 10px", fontSize: 13 }}
+                              onClick={() => openFeedbackModal(req)}
+                              type="button"
+                            >
+                              Відгук
+                            </button>
+                          )}
                           <span className={`urgency-badge ${req.urgency}`}>{getUrgencyLabel(req.urgency)}</span>
                         </div>
                         <p style={{ margin: '10px 0 0 0', color: '#666', fontSize: '14px' }}>Локація: {req.location}</p>
@@ -400,7 +476,119 @@ export default function Profile() {
               </form>
             </div>
           )}
+          {openFeedbackFor && (
+            <div className="card" style={{ marginTop: 16, borderLeft: "4px solid #3498db" }}>
+              <b>Відгук по заявці #{openFeedbackFor}</b>
 
+              {feedbackByRequest[openFeedbackFor] ? (
+                <>
+                  <div style={{ marginTop: 10 }}>
+                    <div>
+                      Оцінка: {"⭐".repeat(feedbackByRequest[openFeedbackFor].rating)}
+                    </div>
+                    <div style={{ marginTop: 6 }}>
+                      {feedbackByRequest[openFeedbackFor].comment || "Без коментаря"}
+                    </div>
+                  </div>
+
+                  <button
+                    className="btn"
+                    style={{ marginTop: 12 }}
+                    onClick={() => setOpenFeedbackFor(null)}
+                    type="button"
+                  >
+                    Закрити
+                  </button>
+                </>
+              ) : (
+                <>
+                  {feedbackError && (
+                    <div style={{ color: "red", marginTop: 8 }}>
+                      {feedbackError}
+                    </div>
+                  )}
+
+                  {feedbackSuccess && (
+                    <div style={{ color: "green", marginTop: 8 }}>
+                      {feedbackSuccess}
+                    </div>
+                  )}
+
+                  <div style={{ marginTop: 12, fontSize: 28 }}>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <span
+                        key={n}
+                        style={{
+                          cursor: "pointer",
+                          color: n <= feedbackForm.rating ? "#f5b301" : "#ccc",
+                        }}
+                        onClick={() => setFeedbackForm((prev) => ({ ...prev, rating: n }))}
+                      >
+                        ★
+                      </span>
+                    ))}
+                  </div>
+
+                  <textarea
+                    className="input"
+                    rows={4}
+                    placeholder="Напишіть коментар..."
+                    style={{ marginTop: 12 }}
+                    value={feedbackForm.comment}
+                    onChange={(e) =>
+                      setFeedbackForm((prev) => ({ ...prev, comment: e.target.value }))
+                    }
+                  />
+
+                  <div style={{ marginTop: 12, display: "flex", gap: 10 }}>
+                    <button
+                      className="btn btn-primary"
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(
+                            `http://127.0.0.1:8000/api/logistics/requests/${openFeedbackFor}/feedback/`,
+                            {
+                              method: "POST",
+                              headers: {
+                                Authorization: `Token ${user.token}`,
+                                "Content-Type": "application/json",
+                              },
+                              body: JSON.stringify({
+                                rating: feedbackForm.rating,
+                                comment: feedbackForm.comment,
+                              }),
+                            }
+                          );
+
+                          if (!res.ok) {
+                            const text = await res.text();
+                            throw new Error(text);
+                          }
+
+                          setFeedbackSuccess("Відгук збережено ✅");
+                          setFeedbackError("");
+                          setOpenFeedbackFor(null);
+                        } catch (e) {
+                          setFeedbackError("Помилка збереження відгуку");
+                        }
+                      }}
+                    >
+                      Надіслати
+                    </button>
+
+                    <button
+                      className="btn"
+                      type="button"
+                      onClick={() => setOpenFeedbackFor(null)}
+                    >
+                      Скасувати
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </section>

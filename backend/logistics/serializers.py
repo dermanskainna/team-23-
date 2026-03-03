@@ -8,6 +8,7 @@ class RequestSerializer(serializers.ModelSerializer):
     attachment_url = serializers.SerializerMethodField()
     volunteer = serializers.StringRelatedField(read_only=True)
     volunteer_username = serializers.CharField(source='volunteer.username', read_only=True)
+    has_feedback = serializers.SerializerMethodField()
 
     class Meta:
         model = Request
@@ -17,6 +18,7 @@ class RequestSerializer(serializers.ModelSerializer):
             'author_name', 'author_organization',
             'feedback', 'attachment', 'attachment_url',
             'volunteer', 'volunteer_username'
+            'has_feedback'
         ]
         read_only_fields = ['id', 'status', 'reject_reason', 'created_at', 'feedback', 'volunteer']
 
@@ -25,6 +27,9 @@ class RequestSerializer(serializers.ModelSerializer):
         if obj.attachment and request:
             return request.build_absolute_uri(obj.attachment.url)
         return None
+
+    def get_has_feedback(self, obj):
+        return hasattr(obj, "feedback")
 
 class WarehouseItemSerializer(serializers.ModelSerializer):
     category_display = serializers.CharField(source='get_category_display', read_only=True)
