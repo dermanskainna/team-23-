@@ -36,22 +36,10 @@ def request_list_create(request):
         if serializer.is_valid():
             new_request = serializer.save(author=request.user)
 
-            if new_status == 'in_progress' and logistics_request.status in ['new', 'awaiting_purchase']:
-                logistics_request.volunteer = request.user
-                logistics_request.save(update_fields=['volunteer', 'status'])
-
-                from chat.models import Conversation
-                Conversation.objects.get_or_create(
-                    request=logistics_request,
-                    volunteer=request.user,
-                    military=logistics_request.author
-                )
-
             result_serializer = RequestSerializer(new_request)
             return Response(result_serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])

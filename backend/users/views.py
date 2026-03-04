@@ -8,7 +8,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 
-from .serializers import UserRegistrationSerializer, ChangePasswordSerializer
+from .serializers import UserRegistrationSerializer, ChangePasswordSerializer, UserSerializer
 from .models import CustomUser
 
 @api_view(['POST'])
@@ -19,6 +19,9 @@ def register_user(request):
         user = serializer.save()
 
         code = str(random.randint(100000, 999999))
+
+        print(f"\n👉 СЕКРЕТНИЙ КОД ДЛЯ {user.email}: {code}\n")
+
         user.verification_code = code
         user.save(update_fields=['verification_code'])
 
@@ -162,3 +165,21 @@ def change_password(request):
         return Response({"message": "Пароль успішно змінено."}, status=status.HTTP_200_OK)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def user_profile(request):
+    user = request.user
+
+    if request.method == 'GET':
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    elif request.method == 'PATCH':
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
