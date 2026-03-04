@@ -110,7 +110,7 @@ export default function Suppliers() {
           Оновити
         </button>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        <div className="two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
           {/* List */}
           <div className="card">
             <h3>Список</h3>

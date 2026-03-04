@@ -38,6 +38,13 @@ export default function Profile() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [openFeedbackFor, setOpenFeedbackFor] = useState(null);
+  const [feedbackForm, setFeedbackForm] = useState({ rating: 5, comment: "" });
+  const [feedbackByRequest, setFeedbackByRequest] = useState({});
+  const [feedbackError, setFeedbackError] = useState("");
+  const [feedbackSuccess, setFeedbackSuccess] = useState("");
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+
   const [formData, setFormData] = useState({
     full_name: '',
     phone: UA_PREFIX,
@@ -49,6 +56,11 @@ export default function Profile() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const getToken = () => {
+    const me = JSON.parse(localStorage.getItem("user") || "null");
+    return me?.token || "";
+  };
 
   useEffect(() => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
@@ -151,21 +163,106 @@ export default function Profile() {
     return e;
   }, [formData.full_name, formData.phone]);
 
+  const loadFeedback = async (requestId) => {
+    const token = getToken();
+    const res = await fetch(`http://127.0.0.1:8000/api/logistics/requests/${requestId}/feedback/`, {
+      headers: { Authorization: `Token ${token}` },
+    });
+    if (res.status === 204) return null;
+    if (!res.ok) throw new Error(await res.text());
+    return await res.json();
+  };
+
+  const submitFeedback = async (requestId) => {
+    setIsSubmittingFeedback(true);
+    setFeedbackError("");
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/logistics/requests/${requestId}/feedback/`, {
+        method: "POST",
+        headers: {
+          Authorization: `Token ${getToken()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          rating: feedbackForm.rating,
+          comment: feedbackForm.comment,
+        }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+
+      const data = await res.json();
+      setFeedbackByRequest((prev) => ({ ...prev, [requestId]: data }));
+      setFeedbackSuccess("Відгук успішно збережено!");
+
+      setTimeout(() => {
+        setOpenFeedbackFor(null);
+        setFeedbackForm({ rating: 5, comment: "" });
+      }, 1500);
+
+    } catch (e) {
+      setFeedbackError("Помилка збереження відгуку.");
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
+
+  const openFeedbackModal = async (req) => {
+    setFeedbackError("");
+    setFeedbackSuccess("");
+    setOpenFeedbackFor(req.id);
+    setFeedbackForm({ rating: 5, comment: "" });
+
+    if (!(req.id in feedbackByRequest)) {
+      try {
+        const data = await loadFeedback(req.id);
+        setFeedbackByRequest((prev) => ({ ...prev, [req.id]: data }));
+      } catch (e) {
+        setFeedbackError("Не вдалося завантажити відгук");
+      }
+    }
+  };
+
   const isFormValid = Object.keys(errors).length === 0;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!isFormValid) return;
 
-    const updatedUser = {
-      ...user,
-      full_name: formData.full_name,
-      phone: formData.phone,
-      organization: formData.organization,
-    };
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/users/profile/', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Token ${user.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          full_name: formData.full_name,
+          phone: formData.phone,
+          organization: formData.organization,
+        })
+      });
 
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    setUser(updatedUser);
-    alert("Зміни збережено (локально).");
+      const updatedUser = {
+        ...user,
+        full_name: formData.full_name,
+        phone: formData.phone,
+        organization: formData.organization,
+      };
+
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setUser(updatedUser);
+
+      if (response.ok) {
+        alert("Зміни успішно збережено на сервері!");
+      } else {
+        alert("Дані збережено локально (ендпоінт на бекенді ще не налаштовано).");
+      }
+    } catch (err) {
+      alert("Помилка мережі при збереженні.");
+    }
   };
 
   const handlePasswordChange = async (e) => {
@@ -297,6 +394,13 @@ export default function Profile() {
                         </h3>
                         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                           <span className={`request-status ${req.status}`}>{getStatusLabel(req.status)}</span>
+
+                          {req.status === "completed" && (
+                            <button className="btn" style={{ padding: "4px 10px", fontSize: 12, background: "#f5b301", color: "white", border: "none" }} onClick={() => openFeedbackModal(req)}>
+                              Відгук
+                            </button>
+                          )}
+
                           <span className={`urgency-badge ${req.urgency}`}>{getUrgencyLabel(req.urgency)}</span>
                         </div>
                         <p style={{ margin: '10px 0 0 0', color: '#666', fontSize: '14px' }}>Локація: {req.location}</p>
@@ -310,11 +414,7 @@ export default function Profile() {
                         {['accepted', 'in_progress', 'completed'].includes(req.status) ? (
                             req.conversation_id ? (
                               <div style={{ marginTop: '10px' }}>
-                                <ChatBox
-                                  conversationId={req.conversation_id}
-                                  token={user.token}
-                                  user={user}
-                                />
+                                <ChatBox conversationId={req.conversation_id} token={user.token} user={user} />
                               </div>
                             ) : (
                               <p style={{ fontSize: '12px', color: '#999', marginTop: '10px' }}>
@@ -375,11 +475,7 @@ export default function Profile() {
 
                             {req.conversation_id ? (
                               <div style={{ marginTop: '10px' }}>
-                                <ChatBox
-                                  conversationId={req.conversation_id}
-                                  token={user.token}
-                                  user={user}
-                                />
+                                <ChatBox conversationId={req.conversation_id} token={user.token} user={user} />
                               </div>
                             ) : (
                               <p style={{ fontSize: '12px', color: '#999', marginTop: '10px' }}>
@@ -389,11 +485,7 @@ export default function Profile() {
                           </div>
 
                           <div style={{ display: 'flex', gap: '10px' }}>
-                            <button
-                              className="btn"
-                              style={{ padding: '8px 15px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}
-                              onClick={() => handleRepeatOrder(req)}
-                            >
+                            <button className="btn" style={{ padding: '8px 15px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }} onClick={() => handleRepeatOrder(req)}>
                               Повторити
                             </button>
                           </div>
@@ -466,12 +558,68 @@ export default function Profile() {
                   </button>
                 </div>
               </div>
-
             </div>
           )}
-
         </div>
       </div>
+
+      {openFeedbackFor && (
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }}>
+          <div className="card" style={{ width: 450, background: "white", padding: 30, borderTop: "4px solid #f5b301" }}>
+            <h3 style={{ marginTop: 0, color: "#2C3E50" }}>Відгук по заявці #{openFeedbackFor}</h3>
+
+            {feedbackByRequest[openFeedbackFor] ? (
+              <>
+                <div style={{ marginTop: 15 }}>
+                  <div style={{ fontSize: 24 }}>
+                    {"⭐".repeat(feedbackByRequest[openFeedbackFor].rating)}
+                    <span style={{ color: '#e2e8f0' }}>{"⭐".repeat(5 - feedbackByRequest[openFeedbackFor].rating)}</span>
+                  </div>
+                  <div style={{ marginTop: 15, background: '#f8fafc', padding: 15, borderRadius: 8, color: '#475569', fontStyle: 'italic' }}>
+                    "{feedbackByRequest[openFeedbackFor].comment || "Без коментаря"}"
+                  </div>
+                </div>
+                <button className="btn" style={{ marginTop: 20, width: "100%", background: '#e2e8f0' }} onClick={() => setOpenFeedbackFor(null)}>
+                  Закрити
+                </button>
+              </>
+            ) : (
+              <>
+                {feedbackError && <div style={{ color: "#e74c3c", marginTop: 8, fontSize: 13 }}>{feedbackError}</div>}
+                {feedbackSuccess && <div style={{ color: "#2ecc71", marginTop: 8, fontSize: 13 }}>{feedbackSuccess}</div>}
+
+                <div style={{ marginTop: 15, fontSize: 36, textAlign: 'center' }}>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <span
+                      key={n}
+                      style={{ cursor: "pointer", color: n <= feedbackForm.rating ? "#f5b301" : "#e2e8f0", transition: 'color 0.2s' }}
+                      onClick={() => setFeedbackForm((prev) => ({ ...prev, rating: n }))}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+
+                <textarea
+                  className="input"
+                  rows={4}
+                  placeholder="Напишіть коментар щодо доставки..."
+                  style={{ marginTop: 15, width: '100%', resize: 'none' }}
+                  value={feedbackForm.comment}
+                  onChange={(e) => setFeedbackForm((prev) => ({ ...prev, comment: e.target.value }))}
+                />
+
+                <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: 'flex-end' }}>
+                  <button className="btn" type="button" style={{ background: '#e2e8f0' }} onClick={() => setOpenFeedbackFor(null)}>Скасувати</button>
+                  <button className="btn btn-primary" type="button" style={{ background: '#f5b301', border: 'none' }} disabled={isSubmittingFeedback} onClick={() => submitFeedback(openFeedbackFor)}>
+                    {isSubmittingFeedback ? 'Надсилання...' : 'Надіслати'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {isPasswordModalOpen && (
         <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }}>
