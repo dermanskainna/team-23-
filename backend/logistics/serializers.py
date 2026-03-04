@@ -41,7 +41,7 @@ class WarehouseItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WarehouseItem
-        fields = ['id', 'name', 'category', 'category_display', 'quantity', 'last_updated', 'attachment_url']
+        fields = ['id', 'name', 'category', 'category_display', 'quantity', 'last_updated']
 
 class TrackingSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
