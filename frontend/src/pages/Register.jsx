@@ -176,8 +176,12 @@ export default function Register() {
             </div>
 
             <h3 style={{ marginTop: 0, color: "#2C3E50" }}>Перевірте вашу пошту</h3>
-            <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
+            <p style={{ fontSize: '14px', color: '#666', marginBottom: '10px' }}>
               Ми відправили 6-значний код на <b>{formData.email}</b>. Будь ласка, введіть його нижче для завершення реєстрації.
+            </p>
+
+            <p style={{ fontSize: '13px', color: '#854d0e', marginBottom: '20px', background: '#fef9c3', padding: '8px', borderRadius: '4px', border: '1px solid #fde047' }}>
+              * Для тестування системи використовуйте код: <strong>111111</strong>
             </p>
 
             {verifyError && <div style={{ background: '#fee2e2', color: '#e74c3c', padding: '10px', borderRadius: '6px', fontSize: '13px', marginBottom: '15px' }}>{verifyError}</div>}

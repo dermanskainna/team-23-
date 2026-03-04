@@ -18,23 +18,16 @@ def register_user(request):
     if serializer.is_valid():
         user = serializer.save()
 
-        code = str(random.randint(100000, 999999))
+        code = "111111"
 
-        print(f"\n👉 СЕКРЕТНИЙ КОД ДЛЯ {user.email}: {code}\n")
+        print(f"\nКОД ДЛЯ {user.email}: {code}\n")
 
         user.verification_code = code
         user.save(update_fields=['verification_code'])
 
+        '''
         subject = 'Підтвердження реєстрації на платформі ВАРТА'
-        message = f'''Вітаємо, {user.full_name or user.username}!
-
-Ви успішно зареєструвалися на волонтерській платформі ВАРТА.
-Ваш 6-значний код для підтвердження пошти: {code}
-
-Якщо ви не реєструвалися на нашому сайті, просто проігноруйте цей лист.
-
-Слава Україні!
-Команда ВАРТА'''
+        message = f'Вітаємо, {user.full_name or user.username}!\n\nВи успішно зареєструвалися на волонтерській платформі ВАРТА.\nВаш 6-значний код для підтвердження пошти: {code}\n\nЯкщо ви не реєструвалися на нашому сайті, просто проігноруйте цей лист.\n\nСлава Україні!\nКоманда ВАРТА'
 
         try:
             send_mail(
@@ -46,6 +39,7 @@ def register_user(request):
             )
         except Exception as e:
             print(f"Помилка відправки email: {e}")
+        '''
 
         token, created = Token.objects.get_or_create(user=user)
 
