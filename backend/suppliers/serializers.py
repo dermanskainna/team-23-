@@ -7,15 +7,18 @@ class SupplierOfferSerializer(serializers.ModelSerializer):
         source="get_category_display",
         read_only=True
     )
+    supplier_name = serializers.CharField(source="supplier.name", read_only=True)
 
     class Meta:
         model = SupplierOffer
         fields = [
             "id",
             "supplier",
+            "supplier_name",
             "category",
             "category_display",
             "item_name",
+            "description",
             "sku",
             "price",
             "currency",

@@ -17,7 +17,7 @@ class RequestSerializer(serializers.ModelSerializer):
             'urgency', 'quantity', 'reject_reason', 'created_at',
             'author_name', 'author_organization',
             'feedback', 'attachment', 'attachment_url',
-            'volunteer', 'volunteer_username'
+            'volunteer', 'volunteer_username',
             'has_feedback'
         ]
         read_only_fields = ['id', 'status', 'reject_reason', 'created_at', 'feedback', 'volunteer']
