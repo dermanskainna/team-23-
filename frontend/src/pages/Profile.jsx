@@ -72,6 +72,7 @@ export default function Profile() {
   }, [navigate]);
 
   const fetchRequests = async (token) => {
+    setIsLoading(true);
     try {
       const response = await fetch('http://127.0.0.1:8000/api/logistics/requests/', {
         method: 'GET',
@@ -81,15 +82,20 @@ export default function Profile() {
         }
       });
 
+      const data = await response.json();
+      console.log("requests data:", data);
+
       if (response.ok) {
-        const data = await response.json();
         setRequests(data);
+        setError('');
       } else {
         setError('Не вдалося завантажити заявки');
+        setRequests([]);
       }
     } catch (err) {
       console.error("Fetch error:", err);
       setError('Помилка мережі при завантаженні заявок');
+      setRequests([]);
     } finally {
       setIsLoading(false);
     }
@@ -324,9 +330,21 @@ export default function Profile() {
                           </p>
                         )}
 
-                        {req.status === 'accepted' && req.conversation_id && (
-                          <ChatBox conversationId={req.conversation_id} user={user} />
-                        )}
+                        {['accepted', 'in_progress', 'completed'].includes(req.status) ? (
+                            req.conversation_id ? (
+                              <div style={{ marginTop: '10px' }}>
+                                <ChatBox
+                                  conversationId={req.conversation_id}
+                                  token={user.token}
+                                  user={user}
+                                />
+                              </div>
+                            ) : (
+                              <p style={{ fontSize: '12px', color: '#999', marginTop: '10px' }}>
+                                Чат ще не створено для цієї заявки
+                              </p>
+                            )
+                        ) : null}
                       </div>
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <button className="btn" style={{ padding: '8px 15px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }} onClick={() => handleRepeatOrder(req)}>
@@ -342,52 +360,71 @@ export default function Profile() {
 
           {activeTab === 'accepted' && user.role === 'volunteer' && (
             <div>
-              <h3 style={{ margin: '0 0 20px 0' }}>Заявки в роботі</h3>
+              <h3 style={{ margin: '0 0 20px 0' }}>Заявки в роботі та завершені</h3>
 
               {isLoading ? (
                 <p style={{ textAlign: 'center', color: '#888' }}>Завантаження заявок...</p>
               ) : error ? (
                 <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>
-              ) : requests.filter(req => Number(req.volunteer) === Number(user.id) && req.status === 'in_progress').length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px', background: '#f9f9f9', borderRadius: '8px', color: '#888' }}>
-                  Ви ще не взяли жодної заявки в роботу.
-                </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {requests
-                    .filter(req => req.volunteer_username === user.username && (req.status === 'in_progress' || req.status === 'completed'))
-                    .map(req => (
-                      <div key={req.id} className="card" style={{ padding: '20px', border: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px' }}>
-                            <span style={{ color: '#888', marginRight: '8px', fontSize: '16px' }}>#{req.id}</span>
-                            {req.title}
-                          </h3>
-                          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                            <span className={`request-status ${req.status}`}>{getStatusLabel(req.status)}</span>
-                            <span className={`urgency-badge ${req.urgency}`}>{getUrgencyLabel(req.urgency)}</span>
-                          </div>
-                          <p style={{ margin: '10px 0 0 0', color: '#666', fontSize: '14px' }}>Локація: {req.location}</p>
+                (() => {
+                  const filteredRequests = requests.filter(
+                    req => req.volunteer_username === user.username &&
+                          (req.status === 'in_progress' || req.status === 'completed')
+                  );
 
-                          {req.reject_reason && req.status === 'rejected' && (
-                            <p style={{ margin: '10px 0 0 0', color: '#e74c3c', fontSize: '14px', fontWeight: 'bold' }}>
-                              Причина: {req.reject_reason}
-                            </p>
-                          )}
-
-                          {req.status === 'in_progress' && req.conversation_id && (
-                            <ChatBox conversationId={req.conversation_id} user={user} />
-                          )}
-                        </div>
-
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                          <button className="btn" style={{ padding: '8px 15px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }} onClick={() => handleRepeatOrder(req)}>
-                            Повторити
-                          </button>
-                        </div>
+                  if (filteredRequests.length === 0) {
+                    return (
+                      <div style={{ textAlign: 'center', padding: '40px', background: '#f9f9f9', borderRadius: '8px', color: '#888' }}>
+                        Ви ще не взяли жодної заявки або вони завершені.
                       </div>
-                    ))}
-                </div>
+                    );
+                  }
+
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                      {filteredRequests.map(req => (
+                        <div key={req.id} className="card" style={{ padding: '20px', border: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <h3 style={{ margin: '0 0 10px 0', fontSize: '18px' }}>
+                              <span style={{ color: '#888', marginRight: '8px', fontSize: '16px' }}>#{req.id}</span>
+                              {req.title}
+                            </h3>
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                              <span className={`request-status ${req.status}`}>{getStatusLabel(req.status)}</span>
+                              <span className={`urgency-badge ${req.urgency}`}>{getUrgencyLabel(req.urgency)}</span>
+                            </div>
+                            <p style={{ margin: '10px 0 0 0', color: '#666', fontSize: '14px' }}>Локація: {req.location}</p>
+
+                            {req.conversation_id ? (
+                              <div style={{ marginTop: '10px' }}>
+                                <ChatBox
+                                  conversationId={req.conversation_id}
+                                  token={user.token}
+                                  user={user}
+                                />
+                              </div>
+                            ) : (
+                              <p style={{ fontSize: '12px', color: '#999', marginTop: '10px' }}>
+                                Чат ще не створено для цієї заявки
+                              </p>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            <button
+                              className="btn"
+                              style={{ padding: '8px 15px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}
+                              onClick={() => handleRepeatOrder(req)}
+                            >
+                              Повторити
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()
               )}
             </div>
           )}

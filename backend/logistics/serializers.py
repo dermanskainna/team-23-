@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Request, WarehouseItem, Feedback
 from .models import RequestHistory
+from chat.models import Conversation
 
 class RequestSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.username', read_only=True)
@@ -9,16 +10,17 @@ class RequestSerializer(serializers.ModelSerializer):
     volunteer = serializers.StringRelatedField(read_only=True)
     volunteer_username = serializers.CharField(source='volunteer.username', read_only=True)
     has_feedback = serializers.SerializerMethodField()
+    conversation_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Request
         fields = [
             'id', 'title', 'description', 'location', 'status',
-            'urgency', 'quantity', 'reject_reason', 'created_at',
+            'urgency', 'reject_reason', 'created_at',
             'author_name', 'author_organization',
             'feedback', 'attachment', 'attachment_url',
             'volunteer', 'volunteer_username',
-            'has_feedback'
+            'has_feedback', 'conversation_id'
         ]
         read_only_fields = ['id', 'status', 'reject_reason', 'created_at', 'feedback', 'volunteer']
 
@@ -30,13 +32,16 @@ class RequestSerializer(serializers.ModelSerializer):
 
     def get_has_feedback(self, obj):
         return hasattr(obj, "feedback")
+    def get_conversation_id(self, obj):
+        conv = Conversation.objects.filter(request=obj).first()
+        return conv.id if conv else None
 
 class WarehouseItemSerializer(serializers.ModelSerializer):
     category_display = serializers.CharField(source='get_category_display', read_only=True)
 
     class Meta:
         model = WarehouseItem
-        fields = ['id', 'name', 'category', 'category_display', 'quantity', 'last_updated',]
+        fields = ['id', 'name', 'category', 'category_display', 'quantity', 'last_updated', 'attachment_url']
 
 class TrackingSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
