@@ -32,7 +32,7 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/users/register/', {
+      const response = await fetch('https://varta-7z8t.onrender.com/api/users/register/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -64,7 +64,7 @@ export default function Register() {
     const savedUser = JSON.parse(localStorage.getItem("user"));
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/users/verify-email/', {
+      const response = await fetch('https://varta-7z8t.onrender.com/api/users/verify-email/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

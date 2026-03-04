@@ -75,7 +75,7 @@ export default function Profile() {
   const fetchRequests = async (token) => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/logistics/requests/', {
+      const response = await fetch('https://varta-7z8t.onrender.com/api/logistics/requests/', {
         method: 'GET',
         headers: {
           'Authorization': `Token ${token}`,
@@ -104,7 +104,7 @@ export default function Profile() {
   const handleLogout = async () => {
     if (!user) return;
     try {
-      await fetch('http://127.0.0.1:8000/api/users/logout/', {
+      await fetch('https://varta-7z8t.onrender.com/api/users/logout/', {
         method: 'POST',
         headers: {
           'Authorization': `Token ${user.token}`,
@@ -185,7 +185,7 @@ export default function Profile() {
 
     setIsChangingPassword(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/users/change-password/', {
+      const response = await fetch('https://varta-7z8t.onrender.com/api/users/change-password/', {
         method: 'POST',
         headers: {
           'Authorization': `Token ${user.token}`,

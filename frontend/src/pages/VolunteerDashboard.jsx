@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "https://varta-7z8t.onrender.com";
 const REQUESTS_URL = `${API_BASE}/api/logistics/requests/`;
 const WAREHOUSE_URL = `${API_BASE}/api/logistics/warehouse/`;
 const UPDATE_STATUS_URL = (id) => `${API_BASE}/api/logistics/requests/${id}/status/`;
@@ -282,7 +282,7 @@ export default function VolunteerDashboard() {
                               const userData = JSON.parse(localStorage.getItem("user"));
                               const token = userData?.token;
                               if (!token) return alert("Токен не знайдено. Увійдіть у систему.");
-                              const response = await fetch(`http://127.0.0.1:8000/api/logistics/requests/${req.id}/download/`, { headers: { 'Authorization': `Token ${token}` } });
+                              const response = await fetch(`https://varta-7z8t.onrender.com/api/logistics/requests/${req.id}/download/`, { headers: { 'Authorization': `Token ${token}` } });
                               if (!response.ok) return alert(`Помилка завантаження файлу: ${response.status}`);
                               const blob = await response.blob();
                               const url = window.URL.createObjectURL(blob);

@@ -53,7 +53,7 @@ export default function CreateRequest() {
       data.append('quantity', formData.quantity);
       if (file) data.append('attachment', file);
 
-      const response = await fetch('http://127.0.0.1:8000/api/logistics/requests/', {
+      const response = await fetch('https://varta-7z8t.onrender.com/api/logistics/requests/', {
         method: 'POST',
         headers: {
           'Authorization': `Token ${savedUser.token}`
