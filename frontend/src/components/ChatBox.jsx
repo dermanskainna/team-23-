@@ -7,7 +7,7 @@ export default function ChatBox({ conversationId, token, user }) {
 
   const fetchMessages = async () => {
     try {
-      const res = await fetch(`http://127.0.0.1:8000/chat/${conversationId}/messages/`, {
+      const res = await fetch(`import.meta.env.VITE_API_URL/chat/${conversationId}/messages/`, {
         headers: { Authorization: `Token ${token}` },
       });
       const data = await res.json();
@@ -20,7 +20,7 @@ export default function ChatBox({ conversationId, token, user }) {
   const sendMessage = async () => {
     if (!newMessage.trim()) return;
     try {
-      const res = await fetch(`http://127.0.0.1:8000/chat/${conversationId}/messages/`, {
+      const res = await fetch(`import.meta.env.VITE_API_URL/chat/${conversationId}/messages/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

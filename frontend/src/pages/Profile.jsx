@@ -87,7 +87,7 @@ export default function Profile() {
   const fetchRequests = async (token) => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/logistics/requests/', {
+      const response = await fetch('import.meta.env.VITE_API_URL/api/logistics/requests/', {
         method: 'GET',
         headers: {
           'Authorization': `Token ${token}`,
@@ -116,7 +116,7 @@ export default function Profile() {
   const handleLogout = async () => {
     if (!user) return;
     try {
-      await fetch('http://127.0.0.1:8000/api/users/logout/', {
+      await fetch('import.meta.env.VITE_API_URL/api/users/logout/', {
         method: 'POST',
         headers: {
           'Authorization': `Token ${user.token}`,
@@ -165,7 +165,7 @@ export default function Profile() {
 
   const loadFeedback = async (requestId) => {
     const token = getToken();
-    const res = await fetch(`http://127.0.0.1:8000/api/logistics/requests/${requestId}/feedback/`, {
+    const res = await fetch(`import.meta.env.VITE_API_URL/api/logistics/requests/${requestId}/feedback/`, {
       headers: { Authorization: `Token ${token}` },
     });
     if (res.status === 204) return null;
@@ -177,7 +177,7 @@ export default function Profile() {
     setIsSubmittingFeedback(true);
     setFeedbackError("");
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/logistics/requests/${requestId}/feedback/`, {
+      const res = await fetch(`import.meta.env.VITE_API_URL/api/logistics/requests/${requestId}/feedback/`, {
         method: "POST",
         headers: {
           Authorization: `Token ${getToken()}`,
@@ -232,7 +232,7 @@ export default function Profile() {
     if (!isFormValid) return;
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/users/profile/', {
+      const response = await fetch('import.meta.env.VITE_API_URL/api/users/profile/', {
         method: 'PATCH',
         headers: {
           'Authorization': `Token ${user.token}`,
@@ -282,7 +282,7 @@ export default function Profile() {
 
     setIsChangingPassword(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/users/change-password/', {
+      const response = await fetch('import.meta.env.VITE_API_URL/api/users/change-password/', {
         method: 'POST',
         headers: {
           'Authorization': `Token ${user.token}`,
