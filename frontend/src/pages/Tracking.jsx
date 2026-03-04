@@ -16,7 +16,7 @@ export default function Tracking() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`import.meta.env.VITE_API_URL/api/logistics/tracking/${trackingId}/`);
+      const response = await fetch(`http://127.0.0.1:8000/api/logistics/tracking/${trackingId}/`);
       const data = await response.json();
 
       if (response.ok) {

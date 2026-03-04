@@ -53,7 +53,7 @@ export default function CreateRequest() {
       data.append('quantity', formData.quantity);
       if (file) data.append('attachment', file);
 
-      const response = await fetch('import.meta.env.VITE_API_URL/api/logistics/requests/', {
+      const response = await fetch('http://127.0.0.1:8000/api/logistics/requests/', {
         method: 'POST',
         headers: {
           'Authorization': `Token ${savedUser.token}`

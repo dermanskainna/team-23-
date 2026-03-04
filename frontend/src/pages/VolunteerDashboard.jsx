@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE = "import.meta.env.VITE_API_URL";
+const API_BASE = "http://127.0.0.1:8000";
 const REQUESTS_URL = `${API_BASE}/api/logistics/requests/`;
 const UPDATE_STATUS_URL = (id) => `${API_BASE}/api/logistics/requests/${id}/status/`;
 const REPORT_URL = `${API_BASE}/api/logistics/report/pdf/`;
@@ -211,7 +211,7 @@ export default function VolunteerDashboard() {
 
     try {
       const res = await fetch(
-        `import.meta.env.VITE_API_URL/api/logistics/requests/${reqId}/feedback/`,
+        `http://127.0.0.1:8000/api/logistics/requests/${reqId}/feedback/`,
         {
           method: "GET",
           headers: {
