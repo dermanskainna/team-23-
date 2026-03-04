@@ -17,14 +17,6 @@ class SupplierDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class OfferListCreateView(generics.ListCreateAPIView):
+    queryset = SupplierOffer.objects.all().order_by("-updated_at")
     serializer_class = SupplierOfferSerializer
     permission_classes = [IsVolunteerOrReadOnly]
-
-    def get_queryset(self):
-        qs = SupplierOffer.objects.all().order_by("-updated_at")
-
-        category = self.request.query_params.get("category")
-        if category:
-            qs = qs.filter(category=category)
-
-        return qs

@@ -24,8 +24,7 @@ class SupplierOffer(models.Model):
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name="offers")
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
     item_name = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    sku = models.CharField(max_length=120, blank=True)
+    sku = models.CharField(max_length=120, blank=True)  # артикул/модель
     price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     currency = models.CharField(max_length=10, default="UAH")
     link = models.URLField(blank=True)

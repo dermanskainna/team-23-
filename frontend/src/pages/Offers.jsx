@@ -27,16 +27,12 @@ export default function Offers() {
     supplier: "",
     category: "drones",
     item_name: "",
-    description: "",
     sku: "",
     price: "",
     currency: "UAH",
     link: "",
     is_available: true,
   });
-
-  const [isDescOpen, setIsDescOpen] = useState(false);
-  const [descOffer, setDescOffer] = useState(null);
 
   const getSavedUser = () => {
     try {
@@ -122,7 +118,6 @@ export default function Offers() {
         supplier: "",
         category: "drones",
         item_name: "",
-        description: "",
         sku: "",
         price: "",
         currency: "UAH",
@@ -139,6 +134,7 @@ export default function Offers() {
   useEffect(() => {
     fetchOffers();
     fetchSuppliers().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -162,7 +158,8 @@ export default function Offers() {
           <button className="btn" onClick={fetchOffers}>Застосувати</button>
         </div>
 
-        <div className="two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          {/* List */}
           <div className="card">
             <h3>Список</h3>
             {isLoading ? (
@@ -178,35 +175,18 @@ export default function Offers() {
                   <div style={{ fontSize: 14, opacity: 0.85 }}>
                     {o.category_display} • {o.price ?? "—"} {o.currency} • {o.is_available ? "✅" : "❌"}
                   </div>
-                  <div style={{ fontSize: 13, opacity: 0.8 }}>Постачальник: {o.supplier_name}</div>
-                  {o.description && (
-                    <button
-                      className="btn"
-                      style={{ marginTop: 8, padding: "6px 12px", fontSize: 13 }}
-                      onClick={() => {
-                        setDescOffer(o);
-                        setIsDescOpen(true);
-                      }}
-                      type="button"
-                    >
-                      Опис
-                    </button>
-                  )}
+                  <div style={{ fontSize: 13, opacity: 0.8 }}>Supplier ID: {o.supplier}</div>
                   {o.link && (
-                    <a
-                      href={o.link}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ fontSize: 14, marginLeft: 10 }}
-                    >
-                      Посилання
-                    </a>
+                    <div>
+                      <a href={o.link} target="_blank" rel="noreferrer">Посилання</a>
+                    </div>
                   )}
                 </div>
               ))
             )}
           </div>
 
+          {/* Create form */}
           <div className="card">
             <h3>Додати офер</h3>
 
@@ -244,14 +224,6 @@ export default function Offers() {
                   placeholder="Назва товару*"
                   value={form.item_name}
                   onChange={(e) => setForm({ ...form, item_name: e.target.value })}
-                />
-
-                <textarea
-                  className="input"
-                  placeholder="Опис товару"
-                  rows={4}
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
                 />
 
                 <input
@@ -299,41 +271,6 @@ export default function Offers() {
           </div>
         </div>
       </div>
-      {isDescOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-            padding: 16,
-          }}
-          onClick={() => setIsDescOpen(false)}
-        >
-          <div
-            className="card"
-            style={{ width: "min(600px, 95vw)", background: "white", padding: 20 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ marginTop: 0 }}>
-              Опис товару: {descOffer?.item_name}
-            </h3>
-
-            <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.5 }}>
-              {descOffer?.description || "Опис відсутній"}
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
-              <button className="btn" onClick={() => setIsDescOpen(false)} type="button">
-                Закрити
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
