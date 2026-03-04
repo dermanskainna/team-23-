@@ -3,6 +3,9 @@ from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 import os
 from datetime import datetime
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from chat.models import Conversation
 
 def attachment_path(instance, filename):
     now = datetime.now()
@@ -149,3 +152,18 @@ class RequestHistory(models.Model):
 
     def __str__(self):
         return f"Заявка #{self.logistics_request_id}: {self.old_status} -> {self.new_status}"
+
+
+@receiver(post_save, sender='logistics.Request')
+def create_conversation_on_accept(sender, instance, created, **kwargs):
+    """
+    Автоматично створює Conversation після того, як заявка стає accepted
+    і ще немає Conversation для цієї заявки.
+    """
+    if instance.status == "accepted" and not instance.conversations.exists():
+        if hasattr(instance, 'volunteer') and instance.volunteer:
+            Conversation.objects.create(
+                volunteer=instance.volunteer,
+                military=instance.military,
+                request=instance
+            )

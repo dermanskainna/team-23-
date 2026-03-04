@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Request, WarehouseItem, Feedback
 from .models import RequestHistory
+from chat.models import Conversation
 
 class RequestSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.username', read_only=True)
@@ -8,6 +9,7 @@ class RequestSerializer(serializers.ModelSerializer):
     attachment_url = serializers.SerializerMethodField()
     volunteer = serializers.StringRelatedField(read_only=True)
     volunteer_username = serializers.CharField(source='volunteer.username', read_only=True)
+    conversation_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Request
@@ -16,7 +18,7 @@ class RequestSerializer(serializers.ModelSerializer):
             'urgency', 'quantity', 'reject_reason', 'created_at',
             'author_name', 'author_organization',
             'feedback', 'attachment', 'attachment_url',
-            'volunteer', 'volunteer_username'
+            'volunteer', 'volunteer_username', 'conversation_id'
         ]
         read_only_fields = ['id', 'status', 'reject_reason', 'created_at', 'feedback', 'volunteer']
 
@@ -25,6 +27,10 @@ class RequestSerializer(serializers.ModelSerializer):
         if obj.attachment and request:
             return request.build_absolute_uri(obj.attachment.url)
         return None
+
+    def get_conversation_id(self, obj):
+        conv = Conversation.objects.filter(request=obj).first()
+        return conv.id if conv else None
 
 class WarehouseItemSerializer(serializers.ModelSerializer):
     category_display = serializers.CharField(source='get_category_display', read_only=True)

@@ -12,6 +12,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from chat.models import Conversation
 
 from .models import Request, WarehouseItem, Feedback, StockTransaction, RequestHistory
 from .serializers import RequestSerializer, WarehouseItemSerializer, TrackingSerializer, FeedbackSerializer, RequestHistorySerializer
@@ -34,6 +35,18 @@ def request_list_create(request):
         serializer = RequestSerializer(data=request.data)
         if serializer.is_valid():
             new_request = serializer.save(author=request.user)
+
+            if new_status == 'in_progress' and logistics_request.status in ['new', 'awaiting_purchase']:
+                logistics_request.volunteer = request.user
+                logistics_request.save(update_fields=['volunteer', 'status'])
+
+                from chat.models import Conversation
+                Conversation.objects.get_or_create(
+                    request=logistics_request,
+                    volunteer=request.user,
+                    military=logistics_request.author
+                )
+
             result_serializer = RequestSerializer(new_request)
             return Response(result_serializer.data, status=status.HTTP_201_CREATED)
 
@@ -62,6 +75,13 @@ def update_request_status(request, pk):
     if new_status == 'in_progress' and logistics_request.status in ['new', 'awaiting_purchase']:
         logistics_request.volunteer = request.user
 
+        if not Conversation.objects.filter(request=logistics_request).exists():
+            Conversation.objects.create(
+                request=logistics_request,
+                volunteer=logistics_request.volunteer,
+                military=logistics_request.author
+            )
+
         if not warehouse_item_id:
             return Response({"error": "Оберіть товар зі складу для списання."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -73,7 +93,6 @@ def update_request_status(request, pk):
         if item.quantity >= logistics_request.quantity:
             item.quantity -= logistics_request.quantity
             item.save(update_fields=['quantity'])
-
             StockTransaction.objects.create(
                 item=item,
                 logistics_request=logistics_request,
@@ -92,7 +111,6 @@ def update_request_status(request, pk):
             item = transaction.item
             item.quantity += abs(transaction.quantity_change)
             item.save(update_fields=['quantity'])
-
             StockTransaction.objects.create(
                 item=item,
                 logistics_request=logistics_request,
@@ -111,8 +129,8 @@ def update_request_status(request, pk):
 
     logistics_request.status = new_status
     logistics_request.reject_reason = reject_reason if new_status == 'rejected' else ''
-
     logistics_request.save()
+
     serializer = RequestSerializer(logistics_request)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
