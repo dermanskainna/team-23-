@@ -44,6 +44,12 @@ export default function Profile() {
     organization: ''
   });
 
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordData, setPasswordData] = useState({ old_password: '', new_password: '', confirm_password: '' });
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
   useEffect(() => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (!savedUser || !savedUser.token) {
@@ -78,7 +84,6 @@ export default function Profile() {
       });
 
       const data = await response.json();
-      console.log("requests data:", data);
 
       if (response.ok) {
         setRequests(data);
@@ -161,6 +166,54 @@ export default function Profile() {
     localStorage.setItem("user", JSON.stringify(updatedUser));
     setUser(updatedUser);
     alert("Зміни збережено (локально).");
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (passwordData.new_password !== passwordData.confirm_password) {
+      setPasswordError('Нові паролі не співпадають.');
+      return;
+    }
+
+    if (passwordData.new_password.length < 8) {
+      setPasswordError('Пароль має містити мінімум 8 символів.');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/users/change-password/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${user.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          old_password: passwordData.old_password,
+          new_password: passwordData.new_password
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setPasswordSuccess('Пароль успішно змінено!');
+        setPasswordData({ old_password: '', new_password: '', confirm_password: '' });
+        setTimeout(() => setIsPasswordModalOpen(false), 2000);
+      } else {
+        const errorMsg = data.old_password ? data.old_password[0] :
+                       (data.new_password ? data.new_password[0] :
+                       (data.error || 'Помилка зміни пароля.'));
+        setPasswordError(errorMsg);
+      }
+    } catch (err) {
+      setPasswordError('Помилка з\'єднання з сервером.');
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   if (!user) return null;
@@ -354,92 +407,113 @@ export default function Profile() {
           )}
 
           {activeTab === 'settings' && (
-            <div style={{ maxWidth: '400px' }}>
-              <form style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '30px' }}>
 
-                <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>Email</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={user.email || ''}
-                    disabled
-                    style={{ background: '#f0f0f0', cursor: 'not-allowed', opacity: 0.8 }}
-                  />
+              <div style={{ flex: '1', minWidth: '300px' }}>
+                <form style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>Email</label>
+                    <input type="text" className="input" value={user.email || ''} disabled style={{ background: '#f0f0f0', cursor: 'not-allowed', opacity: 0.8 }} />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>Логін</label>
+                    <input type="text" className="input" value={user.username || ''} disabled style={{ background: '#f0f0f0', cursor: 'not-allowed', opacity: 0.8 }} />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>ПІБ</label>
+                    <input type="text" className="input" value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} />
+                    {errors.full_name && <p style={{ margin: '6px 0 0 0', color: '#e74c3c', fontSize: '12px' }}>{errors.full_name}</p>}
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>Телефон</label>
+                    <input type="text" className="input" value={formData.phone} onChange={(e) => { const value = normalizeUaPhone(e.target.value); setFormData({ ...formData, phone: value }); }} />
+                    {errors.phone && <p style={{ margin: '6px 0 0 0', color: '#e74c3c', fontSize: '12px' }}>{errors.phone}</p>}
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
+                      {user.role === 'military' ? 'Підрозділ' : 'Волонтерський фонд'}
+                    </label>
+                    <input type="text" className="input" value={formData.organization} onChange={(e) => setFormData({ ...formData, organization: e.target.value })} />
+                  </div>
+
+                  <button type="button" className="btn btn-primary" disabled={!isFormValid} onClick={handleSave} style={!isFormValid ? { opacity: 0.6, cursor: 'not-allowed' } : {}}>
+                    Зберегти зміни
+                  </button>
+
+                </form>
+              </div>
+
+              <div style={{ flex: '1', minWidth: '300px' }}>
+                <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px', padding: '20px' }}>
+                  <h4 style={{ margin: '0 0 15px 0', color: '#2C3E50', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    Безпека акаунту
+                  </h4>
+                  <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
+                    Рекомендуємо регулярно змінювати пароль для надійного захисту ваших даних.
+                  </p>
+                  <button
+                    onClick={() => setIsPasswordModalOpen(true)}
+                    className="btn"
+                    style={{ width: '100%', background: 'transparent', border: '2px solid #3A5A40', color: '#3A5A40', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    Змінити пароль
+                  </button>
                 </div>
+              </div>
 
-                <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>Логін</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={user.username || ''}
-                    disabled
-                    style={{ background: '#f0f0f0', cursor: 'not-allowed', opacity: 0.8 }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>ПІБ</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={formData.full_name}
-                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  />
-                  {errors.full_name && (
-                    <p style={{ margin: '6px 0 0 0', color: '#e74c3c', fontSize: '12px' }}>
-                      {errors.full_name}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>Телефон</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={formData.phone}
-                    onChange={(e) => {
-                      const value = normalizeUaPhone(e.target.value);
-                      setFormData({ ...formData, phone: value });
-                    }}
-                  />
-                  {errors.phone && (
-                    <p style={{ margin: '6px 0 0 0', color: '#e74c3c', fontSize: '12px' }}>
-                      {errors.phone}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>
-                    {user.role === 'military' ? 'Підрозділ' : 'Волонтерський фонд'}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={formData.organization}
-                    onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  disabled={!isFormValid}
-                  onClick={handleSave}
-                  style={!isFormValid ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
-                >
-                  Зберегти зміни
-                </button>
-
-              </form>
             </div>
           )}
 
         </div>
       </div>
+
+      {isPasswordModalOpen && (
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }}>
+          <div className="card" style={{ width: 400, background: "white", padding: 30 }}>
+            <h3 style={{ marginTop: 0, color: "#2C3E50" }}>Зміна пароля</h3>
+
+            {passwordError && <div style={{ background: '#fee2e2', color: '#e74c3c', padding: '10px', borderRadius: '6px', fontSize: '13px', marginBottom: '15px' }}>{passwordError}</div>}
+            {passwordSuccess && <div style={{ background: '#dcfce3', color: '#2ecc71', padding: '10px', borderRadius: '6px', fontSize: '13px', marginBottom: '15px' }}>{passwordSuccess}</div>}
+
+            <form onSubmit={handlePasswordChange} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#555', marginBottom: '5px' }}>Старий пароль</label>
+                <input type="password" required className="input" style={{ width: '100%', marginBottom: 0 }}
+                  value={passwordData.old_password} onChange={(e) => setPasswordData({...passwordData, old_password: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#555', marginBottom: '5px' }}>Новий пароль</label>
+                <input type="password" required className="input" style={{ width: '100%', marginBottom: 0 }}
+                  value={passwordData.new_password} onChange={(e) => setPasswordData({...passwordData, new_password: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#555', marginBottom: '5px' }}>Підтвердіть новий пароль</label>
+                <input type="password" required className="input" style={{ width: '100%', marginBottom: 0 }}
+                  value={passwordData.confirm_password} onChange={(e) => setPasswordData({...passwordData, confirm_password: e.target.value})}
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: 10, marginTop: 10, justifyContent: "flex-end" }}>
+                <button type="button" className="btn" style={{ background: "#ddd", color: '#555' }} onClick={() => setIsPasswordModalOpen(false)}>Скасувати</button>
+                <button type="submit" className="btn btn-primary" disabled={isChangingPassword}>
+                  {isChangingPassword ? 'Збереження...' : 'Підтвердити'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </section>
   );
 }

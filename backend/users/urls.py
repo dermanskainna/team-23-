@@ -6,5 +6,6 @@ urlpatterns = [
     path('login/', views.login_user, name='login'),
     path('logout/', views.logout_user, name='logout'),
     path('pending-military/', views.pending_military, name='pending-military'),
+    path('change-password/', views.change_password, name='change-password'),
     path('verify-military/<int:pk>/', views.verify_military, name='verify-military'),
 ]
